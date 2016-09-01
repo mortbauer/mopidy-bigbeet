@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from mopidy import commands, exceptions
+from . import Extension, schema
 
 
 class BigbeetCommand(commands.Command):
@@ -21,15 +22,6 @@ class BigbeetCommand(commands.Command):
         self.add_child('scan',ScanCommand())
 
 
-
-    # def run(self, args, config, extensions):
-    #     """Run the command.
-    #     Must be implemented by sub-classes that are not simply an intermediate
-    #     in the command namespace.
-    #     """
-    #     print("Hello world")
-    # 	return 0
-
 class ScanCommand(commands.Command):
     help = 'Show dependencies and debug information.'
 
@@ -39,4 +31,6 @@ class ScanCommand(commands.Command):
 
     def run(self, args, config):
     	print("Hello world")
+        res = schema.scan(config)
+        # db.load(Extension.get_data_dir(config))
     	return 0
