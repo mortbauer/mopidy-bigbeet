@@ -1,7 +1,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from mopidy import commands, exceptions
-from . import Extension, schema
+# from . import Extension
+from mopidy_bigbeet.schema import schema
 
 
 class BigbeetCommand(commands.Command):
@@ -20,17 +21,28 @@ class BigbeetCommand(commands.Command):
         self.set(base_verbosity_level=-1)
         # self.add_argument('--foo')
         self.add_child('scan',ScanCommand())
+        self.add_child('check_genres',CheckGenres())
 
+class CheckGenres(commands.Command):
+    help = 'Check for genres missing in genres_tree file.'
+
+    def _init__(self):
+        super(ScanCommand, self).__init__()
+        self.set(base_verbosity_level=-1)
+
+    def run(self, args, config):
+        res = schema.check_genres(config)
+        return 0
 
 class ScanCommand(commands.Command):
-    help = 'Show dependencies and debug information.'
+    help = 'Scan beets library and populate the local library'
 
     def __init__(self):
         super(ScanCommand, self).__init__()
         self.set(base_verbosity_level=-1)
 
     def run(self, args, config):
-    	print("Hello world")
+        # import pdb; pdb.set_trace()
         res = schema.scan(config)
         # db.load(Extension.get_data_dir(config))
     	return 0

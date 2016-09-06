@@ -1,0 +1,357 @@
+2 tone
+acid
+acid jazz
+acoustic music
+acousticana
+african popular music
+afrobeat
+alternative
+alternative country
+alternative dance
+alternative rock
+ambient
+ambient house
+ambient music
+americana
+anarcho punk
+anti-folk
+apala
+arab pop
+arabesque
+arabic pop
+argentine rock
+ars antiqua
+ars nova
+art punk
+art rock
+australian country music
+australian hip hop
+avant-garde
+avant-garde jazz
+avant-garde music
+bachata
+baila
+bakou
+bal-musette
+balinese gamelan
+balkan pop
+ballad
+ballata
+ballet
+baroque
+baroque music
+baroque pop
+bass music
+beat
+beatboxing
+bebop
+bel canto
+berlin school of electronic music
+bhangra
+bhangragga
+bhangramuffin
+big band
+big beat
+bitpop
+blue-eyed soul
+bluegrass
+blues
+blues ballad
+blues-rock
+boogie
+boogie woogie
+boogie-woogie
+bossa nova
+brass band
+brazilian funk
+brazilian jazz
+breton music
+britfunk
+british blues
+british invasion
+britpop
+broken beat
+bubblegum dance
+bubblegum pop
+bulerias
+byzantine chant
+cabaret
+cajun music
+calypso
+calypso jazz
+cantata
+celtic
+cha-cha-cha
+chamber jazz
+chamber music
+chanson
+chant
+chicago blues
+chicago house
+chicago soul
+chicano rap
+children's music
+chillout
+chinese music
+chinese pop
+chinese rock
+christian music
+christmas music
+classic
+classic country
+classic rock
+classical
+classical music
+classical music era
+club music
+comedy
+comedy rap
+comedy rock
+comic opera
+concerto
+cool jazz
+corsican polyphonic song
+country
+cowpunk
+cretan music
+crossover jazz
+crossover music
+cumbia
+dance
+dance music
+dancehall
+dark ambient
+darkcore
+darkstep
+darkwave
+deep house
+delta blues
+dementia
+desert rock
+detroit blues
+detroit techno
+dhamar
+disco
+doo wop
+drum and bass
+dub
+dubstep
+drone
+early music
+easy listening
+electro
+electronic
+electronica
+emo
+exotica
+experimental music
+fado
+fandango
+flamenco
+flower power
+folk music
+free jazz
+french pop
+funk
+funk rock
+fusion jazz
+gabber
+gamelan
+garage rock
+german folk music
+glam rock
+goa
+goa trance
+goombay
+gospel music
+gothic rock
+gregorian chant
+grunge
+gypsy jazz
+hard rock
+hardcore techno
+heavy metal
+hi-nrg
+hillybilly music
+hip hop
+honky tonk
+house
+humor
+ibiza music
+idm
+indian pop
+indie folk
+indie music
+indie pop
+indie rock
+industrial music
+italo disco
+j-pop
+j-rock
+japanese pop
+jazz
+jazz blues
+jazz fusion
+jazz metal
+jazz-funk
+jazz-rock
+jingle
+jitterbug
+jive
+jungle
+k-pop
+kabuki
+klasik
+klezmer
+korean pop
+krautrock
+latin
+latin jazz
+lieder
+liedermacher
+lo-fi
+lo-fi music
+louisiana blues
+lounge music
+lullaby
+madrigal
+mainstream jazz
+mandarin pop
+mariachi
+medieval music
+meditation
+memphis blues
+memphis soul
+merengue
+merseybeat
+metal
+minimal
+minimal techno
+minuet
+modern classical
+modern classical music
+motown
+mozambique
+musette
+music hall
+nashville sound
+neo soul
+nerdcore
+neue deutsche härte
+neue deutsche welle
+new age music
+new beat
+new orleans blues
+new orleans jazz
+new wave
+no wave
+noise music
+noise pop
+noise rock
+nordic folk music
+northern soul
+nu jazz
+nu soul
+oldies
+opera
+orchestra
+orchestral
+orgel
+polka
+pop
+pop music
+pop rock
+post-grunge
+post-hardcore
+post-industrial
+post-minimalism
+post-punk
+post-rock
+progressive electronic
+progressive rock
+psychedelic music
+psychedelic pop
+psychedelic rock
+psychedelic trance
+psychobilly
+punk rock
+ragga
+raggamuffin
+ragtime
+rap
+reggae
+reggaeton
+renaissance music
+requiem
+rhapsody
+rhythm & blues
+rhythm and blues
+riot grrrl
+rock
+rock and roll
+rock opera
+rockabilly
+rocksteady
+rococo
+rumba
+russian pop
+salsa
+samba
+sambai
+scat
+schlager
+sevillana
+shoegaze
+shoegazer
+singer-songwriter
+ska
+smooth jazz
+soft rock
+son
+sonata
+soul
+soul jazz
+soul music
+southern rock
+southern soul
+square dance
+stand-up
+steelband
+sufi music
+suite
+surf instrumental
+surf music
+swamp blues
+swamp rock
+swing
+swing music
+symphonic
+symphony
+synthpop
+tango
+tarantella
+tech
+tech house
+tech trance
+techno
+teen pop
+tibetan pop
+trad jazz
+trance
+tribal house
+trip hop
+trip-hop
+turkish music
+turntablism
+tuvan throat-singing
+underground music
+vaudeville
+vocal
+vocal jazz
+volksmusik
+waltz
+world fusion
+world fusion music
+world music
+yodeling
+zulu music

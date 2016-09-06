@@ -32,6 +32,7 @@
   - classical
   - classic
   - contemporary classical
+  - klassik
   - east asian classical music:
     - chinese classical music:
       - chinese opera
@@ -125,6 +126,34 @@
     - romanticism
     - spanish classical music:
       - zarzuela
+- country:
+  - alt-country:
+    - gothic country
+  - americana
+  - classic country
+  - contemporary country
+  - country & irish
+  - country pop:
+    - nashville sound
+    - urban cowboy
+  - honky tonk:
+    - bakersfield sound
+    - truck driving country
+  - progressive country:
+    - outlaw country:
+      - red dirt
+    - progressive bluegrass
+  - traditional country:
+    - bluegrass:
+      - bluegrass gospel
+    - close harmony
+    - country boogie
+    - country gospel:
+      - bluegrass gospel
+    - country yodeling
+    - cowboy
+    - old-time
+  - western swing
 - dance:
   - alternative dance:
     - grebo
@@ -311,72 +340,32 @@
 - darkwave:
   - ethereal wave
   - neoclassical darkwave
-- descriptor:
-  - a cappella:
-    - barbershop
-    - canto cardenche
-    - madrigal
-    - mbube
-    - sacred harp music
-    - sean-nós
-  - abstract hip hop
-  - ccm:
-    - praise & worship
-  - chamber music
-  - children's music:
-    - fairy tales
-    - lullabies
-    - nursery rhymes
-  - christian hip hop
-  - christian rock
-  - church music:
-    - armenian church music
-    - coptic music
-    - gaelic psalm
-    - plainsong:
-      - gregorian chant
-    - pra god
-  - conscious hip hop
-  - east coast hip hop
-  - educational music
-  - french hip hop
-  - french pop:
+- a cappella:
+  - barbershop
+  - canto cardenche
+  - madrigal
+  - mbube
+  - sacred harp music
+  - sean-nós
+  - doo-wop
+- children's music:
+  - fairy tales
+  - lullabies
+  - nursery rhymes
+- church music:
+  - armenian church music
+  - coptic music
+  - gaelic psalm
+  - plainsong:
+    - gregorian chant
+  - pra god
     - yé-yé
-  - gangsta rap:
-    - chicano rap
-    - trap rap:
-      - bop
-  - holiday music:
-    - carols
-    - christmas music:
-      - colinde
-    - halloween music
+  - carols
+  - christmas music:
+    - colinde
+  - halloween music
   - hymns:
     - sacred harp music
-  - nwobhm
-  - poezja śpiewana
-  - political hip hop
-  - polyphonic chant:
-    - ars nova
-    - ars subtilior
-    - cantu a tenore
-    - lab polyphony
-    - madrigal
-    - sutartinės
-    - tosk polyphony
-  - queercore
-  - rock opera
-  - sounds and effects
-  - southern hip hop
-  - teen pop:
-    - boy band
-  - vanguarda paulista
-  - visual kei
-  - vocal group:
-    - barbershop
-    - doo-wop
-  - west coast hip hop
-- dungeon synth
 - electronic:
   - ambient dub
   - bit music:
@@ -650,6 +639,7 @@
       - free folk
     - skiffle
     - tamborera
+  - singer-songwriter
   - traditional folk music:
     - african folk music:
       - ambasse bey
@@ -1049,7 +1039,8 @@
   - swing:
     - swing revival
   - third stream
-  - vocal jazz
+  - vocal jazz:
+    - vocal
 - musical theatre and entertainment:
   - cabaret
   - cuplé
@@ -1180,6 +1171,7 @@
     - standards
   - turkish pop
 - r&b:
+  - rhythm and blues
   - boogie
   - contemporary r&b:
     - alternative r&b
@@ -1201,6 +1193,7 @@
     - chicago soul
     - country soul
     - latin soul
+    - motown
     - neo-soul
     - northern soul
     - philly soul
@@ -1214,6 +1207,7 @@
       - blue-eyed soul
       - blue eyed soul
 - world music:
+  - world
   - african music:
     - african heavy metal
     - african hip hop
@@ -1361,6 +1355,8 @@
     - armenian folk music
     - rabiz
   - balkan music:
+    - balkanpop
+    - balkan pop
     - balkan folk music:
       - albanian folk music:
         - lab polyphony
@@ -1505,33 +1501,6 @@
     - chanson réaliste
     - chanson à texte
     - nouvelle chanson française
-  - country:
-    - alt-country:
-      - gothic country
-    - americana
-    - contemporary country
-    - country & irish
-    - country pop:
-      - nashville sound
-      - urban cowboy
-    - honky tonk:
-      - bakersfield sound
-      - truck driving country
-    - progressive country:
-      - outlaw country:
-        - red dirt
-      - progressive bluegrass
-    - traditional country:
-      - bluegrass:
-        - bluegrass gospel
-      - close harmony
-      - country boogie
-      - country gospel:
-        - bluegrass gospel
-      - country yodeling
-      - cowboy
-      - old-time
-    - western swing
   - east asian music:
     - ancient chinese music
     - east asian classical music:
@@ -2177,10 +2146,14 @@
 - rock:
   - aor
   - acoustic rock
+  - alternative:
+    - alternative ballad:
+      - ballad
   - alternative rock:
     - alternative dance:
       - grebo
     - baggy / madchester
+    - madchester
     - britpop
     - british invasion
     - dream pop
