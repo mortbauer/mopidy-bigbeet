@@ -104,9 +104,8 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         elif level == "genre":
             import pdb; pdb.set_trace()
             genre = schema.Genre.get(schema.Genre.id == int(query['genre'][0]))
-            subgenres = schema.Genre.select().
-                where(schema.Genre.parent == genre.id).
-                execute()
+            subgenres = schema.Genre.select().where(
+                schema.Genre.parent == genre.id).execute()
             # artist refs not browsable via mpd
             for subgenre in subgenres:
                 result.append(Ref.directory(
@@ -121,8 +120,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                     uri=uricompose('bigbeet',
                                    None,
                                    'artist',
-                                   dict(artist=artist.id),
+                                   dict(artist=artist.id)),
                     name=artist.name
+                    ))
         elif level == "artist":
             for album in self._browse_album(query):
                 result.append(Ref.album(
