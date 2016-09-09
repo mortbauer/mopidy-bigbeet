@@ -27,7 +27,6 @@ art rock
 australian country music
 australian hip hop
 avant-garde
-avant-garde jazz
 avant-garde music
 bachata
 baila
@@ -53,7 +52,6 @@ bhangramuffin
 big band
 big beat
 bitpop
-blue-eyed soul
 bluegrass
 blues
 blues ballad
@@ -97,8 +95,6 @@ chinese pop
 chinese rock
 christian music
 christmas music
-classic
-classic country
 classic rock
 classical
 classical music
