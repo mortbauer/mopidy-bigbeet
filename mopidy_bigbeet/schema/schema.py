@@ -76,7 +76,7 @@ def scan(config):
             parent_id = None
             while genres:
                 genre_name = genres.pop()
-                genre, created = Genre.get_or_create(name=genre_name, parent=parent_id)
+                genre, created = Genre.get_or_create(name=genre_name.title(), parent=parent_id)
                 parent_id = genre.id
             artist, created = Artist.get_or_create(name=bdb_album.albumartist, mb_albumartistid=bdb_album.mb_albumartistid)
             artist.country = bdb_album.country
@@ -193,6 +193,7 @@ class Album(BaseModel):
     mb_releasegroupid = CharField(null=True)  # varchar
     month = IntegerField(null=True)
     name = CharField(null=True)  # varchar
+    # tracktotal = IntegerField(null=True)
     original_day = IntegerField(null=True)
     original_month = IntegerField(null=True)
     original_year = IntegerField(null=True)
