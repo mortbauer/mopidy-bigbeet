@@ -20,7 +20,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
     root_directory = Ref.directory(uri=ROOT_URI, name='Local (bigbeet)')
     FIRST_LEVEL = [
         'Genre',
-        'Subgenre',
+        # 'Subgenre',
         'Singletons',
         'Compilations',
         'Label',
@@ -157,19 +157,45 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 name="{0} - {1}".format(track.artist,track.name))
 
     def _browse_compilations(self, query):
-        comp_albums = schema.Album.select().where(schema.Album.comp == 1)
+        comp_albums = schema.Album.select().where(schema.Album.comp == 1).order_by(schema.Album.name)
         for album in comp_albums:
             yield Ref.album(
                 uri=uricompose('bigbeet',
                                None,
                                'album',
                                dict(album=album.id)),
-                name="{0} {1} ({2})".format(
-                    (album.original_year or album.year),
+                name="{1} ({2})".format(
                     album.name,
                     album.tracktotal))
 
+    def _browse_labels(self, query):
+        labels = schema.Label.select()
+        for label in labels:
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'artists',
+                                   dict(label=label.id)),
+                    name=label.name)
 
+    def _browse_format(self, query):
+        pass
+
+    def _browse_samplerate(self, query):
+        samplerates = schema.Track.select(schema.Track.samplerate).distinct()
+        for samplerate in samplerates:
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'artists',
+                                   dict(samplerate=samplerate)),
+                    name=samplerate)
+
+    def _browse_year(self, query):
+        pass
+
+    def _browse_added_at(self, query):
+        pass
 
     def browse(self, uri):
         logger.debug(u"Browse being called for %s" % uri)
@@ -181,9 +207,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         result = []
         if not level:
             logger.error("No level for uri %s" % uri)
-            # import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
         if level == 'root':
-            return list(self._browse_root())
+           return list(self._browse_root())
         elif level == "genre":
             return list(self._browse_genre(query))
         elif level == "artist":
@@ -196,6 +222,16 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             return list(self._browse_singleton_tracks(query))
         elif level == "compilations":
             return list(self._browse_compilations(query))
+        elif level == "label":
+            return list(self._browse_labels(query))
+        elif level == "format":
+            return list(self._browse_format(query))
+        elif level == "samplerate":
+            return list(self._browse_samplerate(query))
+        elif level == "year":
+            return list(self._browse_year(query))
+        elif level == "added at":
+            return list(self._browse_added_at(query))
         else:
             logger.debug('Unknown URI: %s', uri)
         return result
