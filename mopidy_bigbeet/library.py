@@ -18,21 +18,37 @@ logger = logging.getLogger(__name__)
 class BigbeetLibraryProvider(backend.LibraryProvider):
     ROOT_URI = 'bigbeet:root'
     root_directory = Ref.directory(uri=ROOT_URI, name='Local (bigbeet)')
-    TRACK_ATTRIBUTES = {u'track_name': u'name', }
+    FIRST_LEVEL = [
+        'Genre',
+        'Subgenre',
+        'Singletons',
+        'Compilations',
+        'Label',
+        'Format',
+        'Samplerate',
+        'Year',
+        'Added At',
+    ]
+    ADDED_LEVEL = [
+        'Last Month',
+        'Last Week',
+        'Last Day',
+    ]
 
     def __init__(self, *args, **kwargs):
         super(BigbeetLibraryProvider, self).__init__(*args, **kwargs)
         # schema.connect_db(self.backend.db_path)
         try:
-            schema.connect_db(self.backend.db_path)
+            schema._connect_db(self.backend.db_path)
         except:
             print "Unexpected error:", sys.exc_info()[0]
+            import pdb; pdb.set_trace()
             pass
 
     def search(self, query=None, uris=None, exact=False):
-        logger.info(u'Search query: %s in uris: %s' % (query, uris))
-        # query = self._sanitize_query(query)
-        # logger.debug(u'Search sanitized query: %s ' % query)
+        logger.debug(u'Search query: %s in uris: %s', query, uris)
+        query = self._sanitize_query(query)
+        logger.debug(u'Search sanitized query: %s ' % query)
         albums = []
         if not query:
             uri = 'bigbeet:search-all'
@@ -58,6 +74,103 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             albums=[self._convert_album(album) for album in albums]
         )
 
+    def _browse_root(self):
+        for level in self.FIRST_LEVEL:
+            yield Ref.directory(
+                uri=uricompose('bigbeet',
+                               None,
+                               level.lower(),
+                               None),
+                name=level)
+
+    def _browse_genre(self, query):
+        if query:
+            genre = schema.Genre.get(schema.Genre.id == int(query['genre'][0]))
+            subgenres = schema.Genre.select().where(
+                schema.Genre.parent == genre.id)
+            # artist refs not browsable via mpd
+            for subgenre in subgenres:
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'genre',
+                                   dict(genre=subgenre.id)),
+                    name="- {}".format(subgenre.name)
+                )
+            for artist in genre.artists:
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'artist',
+                                   dict(artist=artist.id)),
+                    name=artist.name
+                    )
+        else:
+            for genre in schema.Genre.select().where(schema.Genre.parent == None).order_by(schema.Genre.name):
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'genre',
+                                   dict(genre=genre.id)),
+                    name=genre.name if bool(genre.name) else u'No Genre')
+
+    def _browse_artist(self, query):
+        artist = schema.Artist.get(schema.Artist.id == int(query['artist'][0]))
+        for album in artist.albums:
+            yield Ref.album(
+                uri=uricompose('bigbeet',
+                               None,
+                               'album',
+                               dict(album=album.id)),
+                name="{0} {1} ({2})".format(
+                    (album.original_year or album.year),
+                    album.name,
+                    album.tracktotal))
+
+    def _browse_album(self, query):
+        album = schema.Album.get(schema.Album.id == int(query['album'][0]))
+        for track in album.track_set:
+            yield Ref.track(
+                uri="bigbeet:track:%s:%s" % (
+                    track.id,
+                    uriencode(str(track.path), '/')),
+                name=track.name)
+
+    def _browse_singletons(self, query):
+        single_tracks = schema.Track.select().where(schema.Track.album_id == None)
+        genres = set([s.genre for s in single_tracks])
+        for genre in genres:
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'singleton_tracks',
+                                   dict(genre_name=genre)),
+                    name=genre if bool(genre) else u'No Genre')
+
+    def _browse_singleton_tracks(self, query):
+        single_tracks = schema.Track.select().where(schema.Track.genre == query['genre_name'][0], schema.Track.album_id == None)
+        for track in single_tracks:
+            yield Ref.track(
+                uri="bigbeet:track:%s:%s" % (
+                    track.id,
+                    uriencode(str(track.path), '/')),
+                name="{0} - {1}".format(track.artist,track.name))
+
+    def _browse_compilations(self, query):
+        comp_albums = schema.Album.select().where(schema.Album.comp == 1)
+        for album in comp_albums:
+            yield Ref.album(
+                uri=uricompose('bigbeet',
+                               None,
+                               'album',
+                               dict(album=album.id)),
+                name="{0} {1} ({2})".format(
+                    (album.original_year or album.year),
+                    album.name,
+                    album.tracktotal))
+
+
+
     def browse(self, uri):
         logger.debug(u"Browse being called for %s" % uri)
         level = urisplit(uri).path
@@ -70,53 +183,19 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             logger.error("No level for uri %s" % uri)
             # import pdb; pdb.set_trace()
         if level == 'root':
-            for item in schema.Genre.select().where(schema.Genre.parent == None).order_by(schema.Genre.name):
-                result.append(Ref.directory(
-                    uri=uricompose('bigbeet',
-                                   None,
-                                   'genre',
-                                   dict(genre=item.id)),
-                    name=item.name if bool(item.name) else u'No Genre'))
+            return list(self._browse_root())
         elif level == "genre":
-            # import pdb; pdb.set_trace()
-            genre = schema.Genre.get(schema.Genre.id == int(query['genre'][0]))
-            subgenres = schema.Genre.select().where(
-                schema.Genre.parent == genre.id).execute()
-            # artist refs not browsable via mpd
-            for subgenre in subgenres:
-                result.append(Ref.directory(
-                    uri=uricompose('bigbeet',
-                                   None,
-                                   'genre',
-                                   dict(genre=subgenre.id)),
-                    name=subgenre.name
-                ))
-            for artist in genre.artists.execute():
-                result.append(Ref.directory(
-                    uri=uricompose('bigbeet',
-                                   None,
-                                   'artist',
-                                   dict(artist=artist.id)),
-                    name=artist.name
-                    ))
+            return list(self._browse_genre(query))
         elif level == "artist":
-            artist = schema.Artist.get(schema.Artist.id == int(query['artist'][0]))
-            for album in artist.albums:
-                result.append(Ref.album(
-                    uri=uricompose('bigbeet',
-                                   None,
-                                   'album',
-                                   dict(album=album.id)),
-                    name=album.name))
+            return list(self._browse_artist(query))
         elif level == "album":
-            album = schema.Album.get(schema.Album.id == int(query['album'][0]))
-            # import pdb; pdb.set_trace()
-            for track in album.track_set:
-                result.append(Ref.track(
-                    uri="bigbeet:track:%s:%s" % (
-                        track.id,
-                        uriencode(str(track.path), '/')),
-                    name=track.name))
+            return list(self._browse_album(query))
+        elif level == "singletons":
+            return list(self._browse_singletons(query))
+        elif level == "singleton_tracks":
+            return list(self._browse_singleton_tracks(query))
+        elif level == "compilations":
+            return list(self._browse_compilations(query))
         else:
             logger.debug('Unknown URI: %s', uri)
         return result
@@ -132,6 +211,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 return [track]
             except Exception as error:
                 logger.debug(u'Failed to lookup "%s": %s' % (uri, error))
+                import pdb; pdb.set_trace()
                 return []
         elif item_type == 'album':
             try:
@@ -217,7 +297,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         query expressions
         """
         # So far no mopidy clients uses a list of expressions in a query
-        # therefore we only take the first element 
+        # therefore we only take the first element
         bb_query = []
         schemas = []
         if u'album' in query:
@@ -284,7 +364,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                                  (schema.Track.name.contains(query['track_name'][0])) |
                                  (schema.Track.composer.contains(query['composer'][0])) |
                                  (schema.Genre.name.contains(query['genre'][0])))
-             [schemas.append(i) for i in ['track','album','artist','genre']]                 
+             [schemas.append(i) for i in ['track','album','artist','genre']]
         return (set(schemas), bb_query)
 
     def _build_joins(self, schemas, query_type):
@@ -316,8 +396,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         album_kwargs = {}
         artist_kwargs = {}
         albumartist_kwargs = {}
-        album = item.album
-        artist = album.artist
+
         track_kwargs['name'] = item.name
         track_kwargs['track_no'] = item.track
         track_kwargs['disc_no'] = item.disc
@@ -340,21 +419,22 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 item.id,
                 uriencode(str(item.path), '/'))
         track_kwargs['length'] = int(item.length) * 1000
-        # TODO
-        #if 'tracktotal' in item:
-        #    album_kwargs['num_tracks'] = int(item['tracktotal'])
 
-        album_kwargs['name'] = album.name
-        album_kwargs['musicbrainz_id'] = album.mb_albumid
-        
-        artist_kwargs['name'] = artist.name
-        artist_kwargs['musicbrainz_id'] = artist.mb_albumartistid
-        #    albumartist_kwargs['name'] = item['artist']
+        album = item.album
+        if album:
+            album_kwargs['name'] = album.name
+            album_kwargs['musicbrainz_id'] = album.mb_albumid
+            album_kwargs['num_tracks'] = album.tracktotal
+            track_kwargs['album'] = Album(**album_kwargs)
+            artist = album.artist
 
-        #if 'albumartist' in item:
-        #    albumartist_kwargs['name'] = item['albumartist']
-        track_kwargs['artists'] = [Artist(**artist_kwargs)]
-        track_kwargs['album'] = Album(**album_kwargs)
+            if artist:
+                album_kwargs['name'] = album.name
+                album_kwargs['musicbrainz_id'] = album.mb_albumid
+                artist_kwargs['name'] = artist.name
+                artist_kwargs['musicbrainz_id'] = artist.mb_albumartistid
+                track_kwargs['artists'] = [Artist(**artist_kwargs)]
+
         return Track(**track_kwargs)
 
     def _convert_album(self, album):
@@ -368,7 +448,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
 
         album_kwargs['name'] = album.name
         album_kwargs['num_discs'] = album.disctotal
-        # album_kwargs['num_tracks'] = album.tracktotal
+        album_kwargs['num_tracks'] = album.tracktotal
         album_kwargs['musicbrainz_id'] = album.mb_albumid
         album_kwargs['date'] = None
         if self.backend.use_original_release_date:

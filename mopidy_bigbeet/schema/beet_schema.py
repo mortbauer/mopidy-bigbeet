@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 #database = SqliteDatabase('/data/music/music_var/beetslibrary.blb', **{})
 
 class BeetsLibrary():
-    
+
     def __init__(self,db_path):
         try:
             import beets.library
@@ -28,4 +28,3 @@ class BeetsLibrary():
         except:
             print "Unexpected error:", sys.exc_info()[0]
             pass
-        print db_path
