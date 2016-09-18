@@ -209,8 +209,22 @@ def album_update(config,album_id):
     else:
         albums = Album.select().where(Album.beets_id == album_id)
         for album in albums:
+            artist = album.artist
+            genre = artist.genre
+            label = album.label
+            album_group = album.album_group
             logger.info(u'Album deleted: %s', album.name)
             album.delete_instance()
+            if not artist.albums:
+                artist.delete_instance()
+            if not label.albums:
+                label.delete_instance()
+            if not album_group.albums:
+                album_group.delete_instance()
+            if not genre.artists and not Genre.select().where(Genre.parent == genre.id):
+                genre.delete_instance()
+
+
 
 def update(config):
     _initialize(config)
