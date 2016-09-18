@@ -12,10 +12,8 @@ class BigbeetBackend(pykka.ThreadingActor, backend.Backend):
 
     def __init__(self, config, audio):
         super(BigbeetBackend, self).__init__()
-        data_dir = Extension.get_data_dir(config)
-        self.db_path = os.path.join(data_dir, b'library.db')
         self.use_original_release_date = True
-        logger.debug("Got library %s" % (self.db_path))
+        self.config = config
         self.playback = BigeetPlaybackProvider(audio=audio, backend=self)
         self.library = BigbeetLibraryProvider(backend=self)
         self.playlists = None

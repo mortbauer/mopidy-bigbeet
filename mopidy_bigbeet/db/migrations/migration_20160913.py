@@ -15,21 +15,23 @@ from mopidy_bigbeet.schema import schema
 #)
 class Migration():
 
-    def __init__(self, my_db):
-        self.migrator = SqliteMigrator(my_db)
+    def __init__(self, *args, **kwargs):
+        self.migrator = SqliteMigrator(kwargs.get(u'database'))
 
 
     def migrate_db(self):
-        migrate(self.migrator.add_column('tracks', 'beets_id',
-                                         IntegerField(null=True)),
-                self.migrator.add_column('albums', 'beets_id',
-                                         IntegerField(null=True)),
-                self.migrator.add_column('albums', 'tracktotal',
-                                         IntegerField(null=True))
+        with schema.database.transaction():
+            migrate(self.migrator.add_column('tracks', 'beets_id',
+                                             IntegerField(null=True)),
+                    self.migrator.add_column('albums', 'beets_id',
+                                             IntegerField(null=True)),
+                    self.migrator.add_column('albums', 'tracktotal',
+                                             IntegerField(null=True))
                 )
-        schema.SchemaMigration.create(version = '20160913' )
+            schema.SchemaMigration.create(version = '20160913' )
 
     def update_db(self):
+
         items = schema.bdb.items()
         for item in items:
             try:

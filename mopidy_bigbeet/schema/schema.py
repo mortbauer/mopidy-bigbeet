@@ -1,12 +1,12 @@
 from __future__ import unicode_literals
+
 import logging
 import os.path
 from os import listdir
-from peewee import *
-from playhouse.apsw_ext import APSWDatabase
-from playhouse.apsw_ext import DateTimeField
 from mopidy_bigbeet import Extension
 from mopidy_bigbeet.schema import beet_schema, genre_schema
+from peewee import *
+from playhouse.apsw_ext import APSWDatabase, DateTimeField
 
 user_version = 1
 # database = SqliteDatabase(None, pragmas=(
@@ -14,18 +14,18 @@ user_version = 1
 #                                     ('user_version', user_version)
 #                                     ))
 
-# database = MySQLDatabase('bigbeet', user='rails_user', passwd='tequila' charset='utf8mb4')
+# database = MySQLDatabase('bigbeet', user='rails_user', passwd='tequila'
+# charset='utf8mb4')
 logger = logging.getLogger(__name__)
 bdb = None
 gdb = None
 data_dir = None
 database = APSWDatabase(None,
-                        pragmas = (
+                        pragmas=(
                                 ('temp_store', 2),
                                 ('journal_mode', 'WAL'),
                                 ('user_version', user_version)
                                     ))
-
 
 
 def _initialize(config):
@@ -33,43 +33,52 @@ def _initialize(config):
     global gdb
     global data_dir
     data_dir = Extension.get_data_dir(config)
-    db_path = os.path.join(data_dir, b'library.db')
-    _check_db(db_path)
     bdb = beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
     gdb = genre_schema.GenreTree(data_dir)
+    db_path = os.path.join(data_dir, b'library.db')
+    _connect_db(db_path)
+
 
 def setup_db():
 	# import pdb; pdb.set_trace()
     try:
-        database.drop_tables([Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, Track])
+        database.drop_tables(
+            [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
     except:
         pass
-    database.create_tables([Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label,SecondaryGenre,Track])
+    database.create_tables(
+        [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
+
 
 def _connect_db(db_path):
     global database
+    db_existed = os.path.isfile(db_path)
     database.init(db_path)
+    if not db_existed:
+        _setup_db()
     database.connect()
+    _migrate_db()
+
+
 
 def _migrate_db():
-    print "This needs to be build"
-    migrations = listdir(os.path.join(os.path.dirname(__file__),'..','db','migrations'))
-    # for migrations not in [s,version for s in schema.SchemaMigration.select()]
-    # __import__('mopidy_bigbeet.db.migrations.migration_20160913', globals(), locals(), [], -1)
-    # from mopidy_bigbeet.db.migrations import *
-    from mopidy_bigbeet.db.migrations import migration_20160913
-    mig = migration_20160913.Migration(database)
-    mig.migrate_db()
-    mig.update_db()
-    pass
+    migrations = listdir(os.path.join(
+        os.path.dirname(__file__), '..', 'db', 'migrations'))
+    migrations = set((m.split('.')[0] for m in migrations if m.startswith(u'migration')))
+    versions = [v.version for v in SchemaMigration.select()]
+    for migration in migrations:
+        if not migration.split('_')[1] in versions:
+            modul_name = 'mopidy_bigbeet.db.migrations.' + migration
+            mig_object = __import__(modul_name,
+                             globals(),
+                             locals(),
+                             [migration],
+                             -1)
+            mig = mig_object.Migration(database=database)
+            import pdb; pdb.set_trace()
+            mig.migrate_db()
+            mig.update_db()
 
-def _check_db(db_path):
-	db_existed = os.path.isfile(db_path)
-        _connect_db(db_path)
-        if not db_existed:
-            _setup_db()
-        elif dict(database._pragmas)['user_version'] != user_version:
-            _migrate_db()
 
 def check_genres(config):
     _initialize(config)
