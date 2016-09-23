@@ -5,23 +5,23 @@ class BigbeetPlugin(BeetsPlugin):
     def __init__(self):
         super(BigbeetPlugin, self).__init__()
         self.register_listener('database_change', self.db_changed)
-        self.changed_albums = []
-        self.changed_items = []
+        self.changed_albums = {}
+        self.changed_items = {}
 
     def db_changed(self, lib, model):
         if model.__class__.__name__ == 'Item':
-            self.changed_items.append(model.id)
+            self.changed_items[model.id] = model
         elif model.__class__.__name__ == 'Album':
-            self.changed_albums.append(model.id)
+            self.changed_albums[model.id] = model
         else:
             print "Unknown Model {}".format(model.__class__.__name__)
             import pdb; pdb.set_trace()
         self.register_listener('cli_exit', self.update)
 
     def update(self, lib):
-        for album_id in set(self.changed_albums):
-            print "Album changed with id: {0}".format(album_id)
+        for album_id, album in self.changed_albums.iteritems():
+            print "Album changed with id: {0} with {1}".format(album_id, album.genre)
             call(['mopidy', 'bigbeet', 'beet_update', '-a', str(album_id)])
-        for item_id in set(self.changed_items):
-            print "Item changed with id: {0}".format(item_id)
+        for item_id, item in self.changed_items.iteritems():
+            print "Item changed with id: {0} at {1}".format(item_id,item.path)
             call(['mopidy', 'bigbeet', 'beet_update', '-i', str(item_id)])

@@ -8,6 +8,8 @@ from mopidy_bigbeet.schema import beet_schema, genre_schema
 from peewee import *
 from playhouse.apsw_ext import APSWDatabase, DateTimeField
 
+# TODO:
+
 user_version = 1
 # database = SqliteDatabase(None, pragmas=(
 #                                     ('journal_mode', 'WAL'),
@@ -225,10 +227,37 @@ def album_update(config,album_id):
                 genre.delete_instance()
 
 
+def _delete_orphans():
+    albums = Album.select()
+    for album in albums:
+        if not album.track_set:
+            import pdb; pdb.set_trace()
+            album.delete_instance()
+    artists = Artist.select()
+    for artist in artists:
+        if not artist.albums:
+            artist.delete_instance()
+    genres = Genre.select()
+    for genre in genres:
+        if not genre.artists:
+            genre.delete_instance()
+    labels = Label.select()
+    for label in labels:
+        if not label.albums:
+            import pdb; pdb.set_trace()
+            label.delete_instance()
+    album_groups = AlbumGroup.select()
+    for album_group in album_groups:
+        if not album_group.albums:
+            import pdb; pdb.set_trace()
+            album_group.delete_instance()
+
+
 
 def update(config):
     _initialize(config)
     # import pdb; pdb.set_trace()
+    _delete_orphans()
     for item in bdb.items(u'singleton:true'):
         logger.info("update: %s", item.path)
         track, created = Track.get_or_create(beets_id=item.id)
@@ -270,9 +299,17 @@ def scan(config):
         for item in bdb_album.items():
             track, created = Track.get_or_create(beets_id=item.id)
             _sync_beets_item(track, item)
-    for item in Track.select().where(Track.album_id == None):
+    for item in bdb.items(u'singleton:true'):
         track, created = Track.get_or_create(beets_id=item.id)
         _sync_beets_item(track, item)
+
+def _find_children(genre, children):
+    logger.info("called with {0}".format(genre.name))
+    childs = [c for c in Genre.select().where(Genre.parent == genre.id)]
+    children += childs
+    for child in childs:
+        _find_children(child, children)
+    return children
 
 class BaseModel(Model):
     created_at = DateTimeField(null=True)
