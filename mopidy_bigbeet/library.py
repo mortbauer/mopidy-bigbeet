@@ -96,8 +96,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                     uri=uricompose('bigbeet',
                                    None,
                                    'artists',
-                                   dict(filter='all_artists',
-                                        all_artists=genre.id,
+                                   dict(all_artists=genre.id,
                                         genre=genre.id)),
                     name="All Artists"
                 )
@@ -114,9 +113,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                     uri=uricompose('bigbeet',
                                    None,
                                    'albums',
-                                   dict(artist=artist.id,
-                                        filter=u'artist',
-                                        filter_value=artist.id)),
+                                   dict(artist_id=artist.id)),
                     name=artist.name
                     )
         else:
@@ -135,24 +132,23 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                     uri=uricompose('bigbeet',
                                    None,
                                    'artists',
-                                   dict(grouping=g.grouping, filter=u'grouping')),
-                    name=g.grouping)
+                                   dict(grouping=g.grouping)),
+                    name=g.grouping if bool(g.grouping) else u'No Group')
+
+    def _browse_hoerspiele(self, query):
+        hoerspiele = schema.Track.select().where(schema.Track.genre == 'Hoerspiel')
+        for grouping in filter(bool,set(h.grouping for h in hoerspiele)):
+            yield Ref.directory(
+                uri=uricompose('bigbeet',
+                                None,
+                                'tracks',
+                                dict(grouping=grouping,
+                                     genre='Hoerspiel')),
+                    name=grouping)
 
 
     def _browse_artists(self, query):
-        if query['filter'][0] == u'label':
-            artists = schema.Artist.select().join(schema.Album).where(schema.Album.label_id == query['label'][0]).distinct()
-        elif query['filter'][0] == u'grouping':
-            artists = schema.Artist.select().join(schema.Album).join(schema.Track).where(schema.Track.grouping == query['grouping'][0]).distinct()
-        elif query['filter'][0] == u'samplerate':
-            artists = schema.Artist.select().join(schema.Album).join(schema.Track).where(schema.Track.samplerate == query['samplerate'][0]).distinct()
-        elif query['filter'][0] == u'format':
-            artists = schema.Artist.select().join(schema.Album).join(schema.Track).where(schema.Track.format == query['format'][0]).distinct()
-        elif query['filter'][0] == u'added_at':
-            artists = schema.Artist.select().join(schema.Album).join(schema.Track).where(schema.Track.added == query['added_at'][0]).distinct()
-        elif query['filter'][0] == u'year':
-            artists = schema.Artist.select().join(schema.Album).where(schema.Album.original_year == query['year'][0]).distinct()
-        elif query['filter'][0] == u'all_artists':
+        if u'all_artists' in query:
             genre = schema.Genre.get(id=query['genre'][0])
             # import pdb; pdb.set_trace()
             genres = schema._find_children(genre,[genre])
@@ -160,47 +156,34 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             artists = []
             for genre in genres:
                 artists += [a for a in schema.Artist.select().where(schema.Artist.genre_id == genre.id)]
-        elif query['filter'][0] == u'genre':
-            artists = schema.Artist.select().where(schema.Artist.genre_id == query['genre'][0])
         else:
-            artists = schema.Artist.select()
+            schemas, bb_query = self._build_query_expressions( query, True)
+            joined_schema = self._build_joins(schemas, u'artist')
+            artists = joined_schema.where(*bb_query).distinct()
+        query_dict = dict([(k, v[0]) for k,v in query.iteritems()])
         for artist in sorted(artists, key=lambda x: x.name):
+            query_dict['artist_id'] = artist.id
             yield Ref.directory(
                 uri=uricompose('bigbeet',
                                 None,
                                 'albums',
-                                dict(artist=artist.id,
-                                     filter=query['filter'][0],
-                                     filter_value=query[query['filter'][0]][0]
-                                     )),
-                    name=artist.name
-                    )
+                                query_dict),
+                name=artist.name
+                )
 
 
     def _browse_albums(self, query):
-        if query['filter'][0] == u'label':
-            albums = schema.Album.select().where(schema.Album.artist_id == query['artist'][0], schema.Album.label_id == query['filter_value'][0])
-        elif query['filter'][0] == u'grouping':
-            albums = schema.Album.select().join(schema.Track).where(schema.Album.artist_id == query['artist'][0], schema.Track.grouping == query['filter_value'][0]).distinct()
-        elif query['filter'][0] == u'samplerate':
-            albums = schema.Album.select().join(schema.Track).where(schema.Album.artist_id == query['artist'][0], schema.Track.samplerate == query['filter_value'][0]).distinct()
-        elif query['filter'][0] == u'format':
-            albums = schema.Album.select().join(schema.Track).where(schema.Album.artist_id == query['artist'][0], schema.Track.format == query['filter_value'][0]).distinct()
-        elif query['filter'][0] == u'added_at':
-            albums = schema.Album.select().join(schema.Track).where(schema.Album.artist_id == query['artist'][0], schema.Track.added == query['filter_value'][0]).distinct()
-        elif query['filter'][0] == u'year':
-            albums = schema.Album.select().where(schema.Album.artist_id == query['artist'][0], schema.Album.original_year == query['filter_value'][0])
-        else:
-            albums = schema.Album.select().where(schema.Album.artist_id == query['artist'][0])
+        schemas, bb_query = self._build_query_expressions( query, True)
+        joined_schema = self._build_joins(schemas, u'album')
+        albums = joined_schema.where(*bb_query).distinct()
+        query_dict = dict([(k, v[0]) for k,v in query.iteritems()])
         for album in sorted(albums, key=lambda x: x.original_year):
+            query_dict['album_id'] = album.id
             yield Ref.directory(
                 uri=uricompose('bigbeet',
                                 None,
                                 'tracks',
-                                dict(album=album.id,
-                                     filter=query['filter'][0],
-                                     filter_value=query['filter_value'][0]
-                                     )),
+                                query_dict),
                     name="{0} {1} ({2})".format(
                         (album.original_year or album.year or ''),
                         album.name,
@@ -208,14 +191,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
 
 
     def _browse_tracks(self, query):
-        if query['filter'][0] == u'samplerate':
-            tracks = schema.Track.select().where(schema.Track.album_id == query['album'][0], schema.Track.samplerate == query['filter_value'][0])
-        elif query['filter'][0] == u'grouping':
-            tracks = schema.Track.select().where(schema.Track.album_id == query['album'][0], schema.Track.grouping == query['filter_value'][0])
-        elif query['filter'][0] == u'format':
-            tracks = schema.Track.select().where(schema.Track.album_id == query['album'][0], schema.Track.format == query['filter_value'][0])
-        else:
-            tracks = schema.Track.select().where(schema.Track.album_id == query['album'][0])
+        schemas, bb_query = self._build_query_expressions( query, True)
+        joined_schema = self._build_joins(schemas, u'track')
+        tracks = joined_schema.where(*bb_query).distinct()
         for track in sorted(tracks, key=lambda x: x.track):
             yield Ref.track(
                 uri="bigbeet:track:%s:%s" % (
@@ -250,7 +228,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 uri=uricompose('bigbeet',
                                None,
                                'tracks',
-                               dict(album=album.id, filter=u'album')),
+                               dict(album_id=album.id)),
                 name="{0} ({1})".format(
                     album.name,
                     album.tracktotal))
@@ -326,6 +304,8 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             return list(self._browse_genre(query))
         elif level == "grouping":
             return list(self._browse_groupings(query))
+        elif level == "hoerspiele":
+            return list(self._browse_hoerspiele(query))
         elif level == "artists":
             return list(self._browse_artists(query))
         elif level == "albums":
@@ -472,6 +452,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             else:
                 bb_query.append(schema.Album.name.contains(query['album'][0]))
             schemas.append(u'album')
+        if u'album_id' in query:
+            bb_query.append(schema.Track.album_id == query['album_id'][0])
+            schemas.append(u'track')
         if u'performer' in query:
             if exact:
                 bb_query.append(schema.Track.artist == query['performer'][0])
@@ -484,6 +467,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             else:
                 bb_query.append(schema.Artist.name.contains(query['artist'][0]))
             schemas.append(u'artist')
+        if u'artist_id' in query:
+            bb_query.append(schema.Album.artist_id == query['artist_id'][0])
+            schemas.append(u'album')
         if u'uri' in query:
             if exact:
                 bb_query.append(schema.Track.path == query['uri'][0])
@@ -512,6 +498,21 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             else:
                 bb_query.append(schema.Genre.name.contains(query['genre'][0]))
             schemas.append(u'genre')
+        if u'grouping' in query:
+            bb_query.append(schema.Track.grouping == query['grouping'][0])
+            schemas.append(u'track')
+        if u'label' in query:
+            bb_query.append(schema.Album.label_id == query['label'][0])
+            schemas.append(u'album')
+        if u'format' in query:
+            bb_query.append(schema.Track.format == query['format'][0])
+            schemas.append(u'track')
+        if u'samplerate' in query:
+            bb_query.append(schema.Track.samplerate == query['samplerate'][0])
+            schemas.append(u'track')
+        if u'year' in query:
+            bb_query.append(schema.Album.original_year == query['year'][0])
+            schemas.append(u'album')
         if u'any' in query:
             if exact:
                 bb_query.append((schema.Album.name == query['album'][0]) |
@@ -538,18 +539,27 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         """
         Build a joined Expression
         """
-        if query_type == u'album':
-            join_schema = schema.Album.select()
+        if query_type == u'artist':
+            join_schema = schema.Artist.select()
+            schemas -= set([u'artist'])
             if u'track' in schemas:
-                join_schema = join_schema.join(schema.Track)
+                schemas.update(['album'])
+        elif query_type == u'album':
+            schemas -= set([u'album'])
+            join_schema = schema.Album.select()
         else:
+            schemas -= set([u'track'])
             join_schema = schema.Track.select()
-            if schemas != set([u'track']):
-                join_schema = join_schema.join(schema.Album)
+        if u'album' in schemas:
+            join_schema = join_schema.join(schema.Album)
         if u'artist' in schemas:
             join_schema = join_schema.join(schema.Artist)
+        if u'track' in schemas:
+            join_schema = join_schema.join(schema.Track)
         if u'genre' in schemas:
             join_schema = join_schema.join(schema.Genre)
+        if u'label' in schemas:
+            join_schema = join_schema.join(schema.Label)
         return join_schema
 
     def _convert_track(self, item):
