@@ -143,7 +143,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                                 None,
                                 'tracks',
                                 dict(grouping=grouping,
-                                     genre='Hoerspiel')),
+                                     track_genre='Hoerspiel')),
                     name=grouping)
 
 
@@ -498,6 +498,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             else:
                 bb_query.append(schema.Genre.name.contains(query['genre'][0]))
             schemas.append(u'genre')
+        if u'track_genre' in query:
+            bb_query.append(schema.Track.genre == query['track_genre'][0])
+            schemas.append(u'track')
         if u'grouping' in query:
             bb_query.append(schema.Track.grouping == query['grouping'][0])
             schemas.append(u'track')
