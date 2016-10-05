@@ -8,7 +8,6 @@ from mopidy_bigbeet.schema import beet_schema, genre_schema
 from peewee import *
 from playhouse.apsw_ext import APSWDatabase, DateTimeField
 
-# TODO:
 
 user_version = 1
 # database = SqliteDatabase(None, pragmas=(
@@ -140,19 +139,19 @@ def _sync_beets_item(track, item):
 
 
 def _sync_beets_album(album, bdb_album):
-    genre_name = bdb_album.genre
+    genre_name = bdb_album.genre or '_Unknown'
     genre = _set_genre(genre_name)
     artist, created = Artist.get_or_create(
-        name=bdb_album.albumartist,
+        name=(bdb_album.albumartist or '_Unknown'),
         mb_albumartistid=bdb_album.mb_albumartistid)
     artist.country = bdb_album.country
     artist.albumartist_sort = bdb_album.albumartist_sort
     artist.albumartist_credit = bdb_album.albumartist_credit
     artist.genre = genre
     artist.save()
-    label, created = Label.get_or_create(name = bdb_album.label)
+    label, created = Label.get_or_create(name = (bdb_album.label or '_Unknown'))
     album_group, created = AlbumGroup.get_or_create(
-        name = bdb_album.albumtype)
+        name = (bdb_album.albumtype or '_Unknown'))
     album.name = bdb_album.album
     album.mb_albumid = bdb_album.mb_albumid
     album.label = label
@@ -231,7 +230,6 @@ def _delete_orphans():
     albums = Album.select()
     for album in albums:
         if not album.track_set:
-            import pdb; pdb.set_trace()
             album.delete_instance()
     artists = Artist.select()
     for artist in artists:
@@ -244,14 +242,11 @@ def _delete_orphans():
     labels = Label.select()
     for label in labels:
         if not label.albums:
-            import pdb; pdb.set_trace()
             label.delete_instance()
     album_groups = AlbumGroup.select()
     for album_group in album_groups:
         if not album_group.albums:
-            import pdb; pdb.set_trace()
             album_group.delete_instance()
-
 
 
 def update(config):

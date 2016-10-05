@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 # - limit search results
 # - show Singletons below Genre (Volksmusik)
 # - Root Classic composer gernre = classical music + childs
+# - albumtype AlbumGroup
 
 
 class BigbeetLibraryProvider(backend.LibraryProvider):
@@ -145,7 +146,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                                 None,
                                 level,
                                 query_dict),
-                name=": {0}".format(grouping))
+                name=": {0}".format(grouping or u'No Group'))
             )
         return refs
 
@@ -249,6 +250,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             comp_albums = schema.Album.select().where(schema.Album.comp == 1, schema.Album.genre_id == query['genre_id'][0]).order_by(schema.Album.name)
         else:
             comp_albums = schema.Album.select().where(schema.Album.comp == 1).order_by(schema.Album.name)
+        if self.auto_grouping and len(comp_albums) > self.auto_grouping:
+                for ref in self._show_groupings(query, u'albums'):
+                    refs.append(ref)
         for album in comp_albums:
             refs.append(Ref.album(
                 uri=uricompose('bigbeet',
@@ -436,7 +440,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 groupings = joined_schema.where(*bb_query).distinct()
         else:
             groupings = schema.Track.select(schema.Track.grouping).distinct()
-        return sorted([g.grouping for g in groupings if g.grouping])
+        return sorted([g.grouping for g in groupings])
 
 
     def _sanitize_query(self, query):
@@ -450,6 +454,8 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         for (key, values) in query.iteritems():
             if not values:
                 del query[key]
+            elif values == u' ':
+                values = u''
             if type(values) is not list:
                 query[key] = [values]
             for index, value in enumerate(values):

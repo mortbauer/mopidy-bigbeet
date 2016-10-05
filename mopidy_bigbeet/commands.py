@@ -21,6 +21,7 @@ class BigbeetCommand(commands.Command):
         self.add_child('check_genres',CheckGenres())
         self.add_child('update',UpdateCommand())
         self.add_child('beet_update',BeetUpdateCommand())
+        self.add_child('debug',DebugCommand())
 
 class CheckGenres(commands.Command):
     help = 'Check for genres missing in genres_tree file.'
@@ -60,6 +61,24 @@ class UpdateCommand(commands.Command):
         # import pdb; pdb.set_trace()
         res = schema.update(config)
         # db.load(Extension.get_data_dir(config))
+    	return 0
+
+class DebugCommand(commands.Command):
+    help = 'entry point for development'
+
+    def __init__(self):
+        super(DebugCommand, self).__init__()
+        self.set(base_verbosity_level=-1)
+
+    def run(self, args, config):
+        from mopidy import backend
+        import pykka
+        from .backend import BigbeetBackend
+        from uritools import uricompose, uriencode, urisplit
+        library = BigbeetBackend(config,None).library
+        schema._initialize(config)
+
+        import pdb; pdb.set_trace()
     	return 0
 
 class BeetUpdateCommand(commands.Command):
