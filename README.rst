@@ -35,7 +35,26 @@ Before starting Mopidy, you must add configuration for
 Mopidy-Bigbeet to your Mopidy configuration file::
 
     [bigbeet]
-    # TODO: Add example of extension config
+    enabled = true
+    beetslibrary = /data/music/beetslibrary.blb
+
+
+Scan the Library
+================
+
+Initially the beets library needs to be scanned and translated into the bigbeet format.
+
+mopidy bigbeet scan
+
+A library DB File will be created in $XDG_DATA_DIR/mopidy (.local/share/mopidy/bigbeet)
+
+Genres Tree
+===========
+
+The initial scan creates a genres-tree.yaml file.
+This file defines how the hierarchical Genres Tree will be constructed.
+You may want to edit the file. 
+
 
 
 Project resources

@@ -34,6 +34,7 @@ def _initialize(config):
     global gdb
     global data_dir
     data_dir = Extension.get_data_dir(config)
+    # config['bigbeet']['bb_library']
     bdb = beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
     gdb = genre_schema.GenreTree(data_dir)
     db_path = os.path.join(data_dir, b'library.db')
@@ -49,6 +50,7 @@ def setup_db():
         pass
     database.create_tables(
         [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
+    SchemaMigration.create(version = '20160913' )
 
 
 def _connect_db(db_path):
@@ -56,8 +58,11 @@ def _connect_db(db_path):
     db_existed = os.path.isfile(db_path)
     database.init(db_path)
     if not db_existed:
-        _setup_db()
-    database.connect()
+        setup_db()
+    try:
+        database.connect()
+    except:
+        pass
     _migrate_db()
 
 
@@ -76,7 +81,7 @@ def _migrate_db():
                              [migration],
                              -1)
             mig = mig_object.Migration(database=database)
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             mig.migrate_db()
             mig.update_db()
 
@@ -267,7 +272,7 @@ def _fix_mtime(config):
                 item.mtime = item.current_mtime()
                 item.store()
             else:
-                print("missing %s", item.path)
+                print(u"missing %s", item.path)
                 # import pdb; pdb.set_trace()
                 item.remove(False,True)
                 tracks = Track.select().where(Track.path == item.path)
@@ -286,9 +291,13 @@ def _fix_mtime(config):
 
 def scan(config):
     _initialize(config)
-    import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     for bdb_album in bdb.albums():
-        print("%s - %s" % (bdb_album.id, bdb_album.album))
+        try:
+            print("%s - %s" % (bdb_album.id, bdb_album.album.encode('utf-8')))
+        except:
+            pass
+            #import pdb; pdb.set_trace()
         album, created = Album.get_or_create(beets_id=bdb_album.id)
         _sync_beets_album(album, bdb_album)
         for item in bdb_album.items():

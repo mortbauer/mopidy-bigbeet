@@ -47,8 +47,8 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             schema._initialize(self.backend.config)
             self.auto_grouping = 10
         except:
-            print "Unexpected error:", sys.exc_info()[0]
-            import pdb; pdb.set_trace()
+            print "Unexpected error: %s", sys.exc_info()[0]
+            #import pdb; pdb.set_trace()
             pass
 
     def search(self, query=None, uris=None, exact=False):
