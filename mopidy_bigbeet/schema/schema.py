@@ -33,8 +33,7 @@ def _initialize(config):
     global bdb
     global gdb
     global data_dir
-    data_dir = Extension.get_data_dir(config)
-    # config['bigbeet']['bb_library']
+    data_dir = config['bigbeet']['bb_data_dir'] #|| Extension.get_data_dir(config)
     bdb = beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
     gdb = genre_schema.GenreTree(data_dir)
     db_path = os.path.join(data_dir, b'library.db')
@@ -292,7 +291,9 @@ def _fix_mtime(config):
 def scan(config):
     _initialize(config)
     # import pdb; pdb.set_trace()
-    for bdb_album in bdb.albums():
+    from beets import dbcore
+    id_sort = dbcore.query.FixedFieldSort(u"id", True)
+    for bdb_album in bdb.albums(sort = id_sort):
         try:
             print("%s - %s" % (bdb_album.id, bdb_album.album.encode('utf-8')))
         except:
