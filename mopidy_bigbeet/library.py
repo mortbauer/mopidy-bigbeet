@@ -66,10 +66,12 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                              'search',
                              query)
             schemas, bb_query = self._build_query_expressions(query, exact)
+            #import pdb; pdb.set_trace()
             joined_schema = self._build_joins(schemas, u'track')
             tracks = joined_schema.where(*bb_query)
             if 'track_name' not in query:
                 # when trackname queried dont search for albums
+                schemas, bb_query = self._build_query_expressions(query, exact,'album')
                 joined_schema = self._build_joins(schemas, u'album')
                 albums = joined_schema.where(*bb_query)
         logger.debug(u"Query found %s tracks and %s albums"
@@ -402,7 +404,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 return [track]
             except Exception as error:
                 logger.debug(u'Failed to lookup "%s": %s' % (uri, error))
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 return []
         elif item_type == 'album':
             try:
@@ -497,7 +499,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             date = None
         return date
 
-    def _build_query_expressions(self, query, exact=True):
+    def _build_query_expressions(self, query, exact=True, req_obj='track'):
         """
         Transforms a mopidy query into a list of bigbeet
         query expressions
@@ -506,6 +508,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         # therefore we only take the first element
         bb_query = []
         schemas = []
+        # import pdb; pdb.set_trace()
         if u'album' in query:
             if exact:
                 bb_query.append(schema.Album.name == query['album'][0])
@@ -582,25 +585,36 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             bb_query.append(schema.Track.samplerate == query['samplerate'][0])
             schemas.append(u'track')
         if u'any' in query:
-            if exact:
-                bb_query.append((schema.Album.name == query['album'][0]) |
-                    (schema.Track.artist == query['performer'][0]) |
-                    (schema.Artist.name == query['artist'][0]) |
-                    (schema.Track.path == query['uri'][0]) |
-                    (schema.Track.year == int(query['year'][0])) |
-                    (schema.Track.name == query['track_name'][0]) |
-                    (schema.Track.composer == query['composer'][0]) |
-                    (schema.Genre.name == query['genre'][0]))
-            else:
-                bb_query.append((schema.Album.name.contains(query['album'][0])) |
-                    (schema.Track.artist.contains(query['performer'][0])) |
-                    (schema.Artist.name.contains(query['artist'][0])) |
-                    (schema.Track.path.contains(query['uri'][0])) |
-                    (schema.Track.year == int(query['year'][0])) |
-                    (schema.Track.name.contains(query['track_name'][0])) |
-                    (schema.Track.composer.contains(query['composer'][0])) |
-                    (schema.Genre.name.contains(query['genre'][0])))
-            [schemas.append(i) for i in ['track','album','artist','genre']]
+            if req_obj == 'track':
+                if exact:
+                    bb_query.append((schema.Album.name == query['any'][0]) |
+                        (schema.Track.artist == query['any'][0]) |
+                        (schema.Artist.name == query['any'][0]) |
+                        #(schema.Track.path == query['any'][0]) |
+                        #(schema.Track.year == int(query['year'][0])) |
+                        (schema.Track.name == query['any'][0]) |
+                        (schema.Track.composer == query['any'][0]) |
+                        (schema.Genre.name == query['any'][0]))
+                else:
+                    bb_query.append((schema.Album.name.contains(query['any'][0])) |
+                        (schema.Track.artist.contains(query['any'][0])) |
+                        (schema.Artist.name.contains(query['any'][0])) |
+                        # (schema.Track.path.contains(query['any'][0])) |
+                        # (schema.Track.year == int(query['year'][0])) |
+                        (schema.Track.name.contains(query['any'][0])) |
+                        (schema.Track.composer.contains(query['any'][0])) |
+                        (schema.Genre.name.contains(query['any'][0])))
+                [schemas.append(i) for i in ['track','album','artist','genre']]
+            if req_obj == 'album':
+                if exact:
+                    bb_query.append((schema.Album.name == query['any'][0]) |
+                       (schema.Artist.name == query['any'][0]) |
+                       (schema.Genre.name == query['any'][0]))
+                else:
+                    bb_query.append((schema.Album.name.contains(query['any'][0])) |
+                        (schema.Artist.name.contains(query['any'][0])) |
+                        (schema.Genre.name.contains(query['any'][0])))
+                [schemas.append(i) for i in ['album','artist','genre']]
         return (set(schemas), bb_query)
 
     def _build_joins(self, schemas, query_type):
