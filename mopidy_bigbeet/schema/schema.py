@@ -177,6 +177,7 @@ def _sync_beets_album(album, bdb_album):
     album.original_year = bdb_album.original_year
     album.tracktotal = len(bdb_album.items())
     album.year = bdb_album.year
+    album.art_url = bdb_album.art_url
     album.save()
 
 def _set_genre(genre_name):
@@ -355,6 +356,7 @@ class Album(BaseModel):
     artist = ForeignKeyField(Artist, related_name='albums', db_column='artist_id', null=True)
     beets_id = IntegerField(null=True)
     catalognum = CharField(null=True)  # varchar
+    art_url = CharField(null=True)  # varchar
     comp = IntegerField(null=True)
     day = IntegerField(null=True)
     disctotal = IntegerField(null=True)

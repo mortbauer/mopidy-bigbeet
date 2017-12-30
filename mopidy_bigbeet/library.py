@@ -66,7 +66,6 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                              'search',
                              query)
             schemas, bb_query = self._build_query_expressions(query, exact)
-            #import pdb; pdb.set_trace()
             joined_schema = self._build_joins(schemas, u'track')
             tracks = joined_schema.where(*bb_query)
             if 'track_name' not in query:
@@ -76,6 +75,8 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 albums = joined_schema.where(*bb_query)
         logger.debug(u"Query found %s tracks and %s albums"
                      % (len(tracks), len(albums)))
+        #import pdb; pdb.set_trace()
+        print [self._convert_album(album) for album in albums]
         return SearchResult(
             uri=uri,
             tracks=[self._convert_track(track) for track in tracks],
@@ -731,7 +732,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         #    album_kwargs['last_modified'] = album['added']
 
         # if 'artpath' in album:
-        #    album_kwargs['images'] = [album['artpath']]
+        album_kwargs['images'] = [album.art_url]
         artist_kwargs['name'] = album.artist.name
         artist_kwargs['musicbrainz_id'] = album.artist.mb_albumartistid
         artist = Artist(**artist_kwargs)
