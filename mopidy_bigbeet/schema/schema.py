@@ -177,7 +177,10 @@ def _sync_beets_album(album, bdb_album):
     album.original_year = bdb_album.original_year
     album.tracktotal = len(bdb_album.items())
     album.year = bdb_album.year
-    album.art_url = bdb_album.art_url
+    try:
+        album.art_url = bdb_album.art_url
+    except:
+        logger.debug(u'Album has no art_url field yet: %s', album.name)
     album.save()
 
 def _set_genre(genre_name):
