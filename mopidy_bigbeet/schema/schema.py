@@ -34,9 +34,11 @@ def _initialize(config):
     global gdb
     global data_dir
     data_dir = config['bigbeet']['bb_data_dir'] #|| Extension.get_data_dir(config)
+    if not os.path.exists(data_dir):
+      os.makedirs(data_dir)
     bdb = beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
     gdb = genre_schema.GenreTree(data_dir)
-    db_path = os.path.join(data_dir, b'library.db')
+    db_path = os.path.join(data_dir, b'bb_library.db')
     _connect_db(db_path)
 
 

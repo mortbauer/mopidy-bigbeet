@@ -37,6 +37,7 @@ Mopidy-Bigbeet to your Mopidy configuration file::
     [bigbeet]
     enabled = true
     beetslibrary = /data/music/beetslibrary.blb
+    bb_data_dir = /data/music/music_var/bigbeet
 
 
 Scan the Library
@@ -46,7 +47,7 @@ Initially the beets library needs to be scanned and translated into the bigbeet 
 
 mopidy bigbeet scan
 
-A library DB File will be created in $XDG_DATA_DIR/mopidy (.local/share/mopidy/bigbeet)
+A library DB File will be created in bb_data_dir 
 
 Genres Tree
 ===========
@@ -75,7 +76,7 @@ Credits
 Changelog
 =========
 
-v0.0.1 (UNRELEASED)
+v0.0.2 (UNRELEASED)
 ----------------------------------------
 
 - Initial release.
