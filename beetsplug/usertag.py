@@ -19,6 +19,9 @@ Filtering the library by tag works in the exact same way as with other fields:
 beet ls usertags:<filtertag>
 
 copyright 2015 by Ingo Fruend (github@ingofruend.net)
+
+Using rompr tags
+copyright 2018 by Tom Roth (rawdlite@gmail.com)
 """
 from __future__ import (division, absolute_import, print_function,
                         unicode_literals)
@@ -28,7 +31,25 @@ from __future__ import (division, absolute_import, print_function,
 from beets.plugins import BeetsPlugin
 from beets.ui import Subcommand
 from beets.dbcore import types
+import mysql.connector
 
+def scan_rompr_tags(lib, opts, args):
+    print('YO!!')
+    rompr_cnx = mysql.connector.connect(user='admin', password='R9nM773tYJtcLv',
+                              host='rompr',
+                              database='romprdb')
+    cursor = rompr_cnx.cursor()
+    query = ("select Tagtable.Name as Tag, Tracktable.Uri as Path  from Tracktable , TagListtable, Tagtable where Tracktable.TTindex = TagListtable.TTindex and Tagtable.Tagindex = TagListtable.Tagindex;")
+    cursor.execute(query)
+    for (Tag, Path) in cursor:
+        print("{}, {} ".format(
+              Tag, Path))
+
+    cursor.close()
+    rompr_cnx.close()
+scan_tags_command = Subcommand('scantags',
+                                help='scan tags from rompr DB')
+scan_tags_command.func = scan_rompr_tags
 
 def add_usertag(lib, opts, args):
     """Add a usertag"""
@@ -130,4 +151,5 @@ class UserTagsPlugin(BeetsPlugin):
         return [add_tag_command,
                 rm_tag_command,
                 clear_tags_command,
-                list_tags_command]
+                list_tags_command,
+                scan_tags_command]
