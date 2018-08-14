@@ -33,11 +33,12 @@ def _initialize(config):
     global bdb
     global gdb
     global data_dir
-    data_dir = Extension.get_data_dir(config)
-    # config['bigbeet']['bb_library']
+    data_dir = config['bigbeet']['bb_data_dir'] #|| Extension.get_data_dir(config)
+    if not os.path.exists(data_dir):
+      os.makedirs(data_dir)
     bdb = beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
     gdb = genre_schema.GenreTree(data_dir)
-    db_path = os.path.join(data_dir, b'library.db')
+    db_path = os.path.join(data_dir, b'bb_library.db')
     _connect_db(db_path)
 
 
@@ -50,7 +51,7 @@ def setup_db():
         pass
     database.create_tables(
         [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
-    SchemaMigration.create(version = '20160913' )
+    SchemaMigration.create(version = '20171229' )
 
 
 def _connect_db(db_path):
@@ -63,7 +64,7 @@ def _connect_db(db_path):
         database.connect()
     except:
         pass
-    _migrate_db()
+    #_migrate_db()
 
 
 
@@ -178,6 +179,10 @@ def _sync_beets_album(album, bdb_album):
     album.original_year = bdb_album.original_year
     album.tracktotal = len(bdb_album.items())
     album.year = bdb_album.year
+    try:
+        album.art_url = bdb_album.art_url
+    except:
+        logger.debug(u'Album has no art_url field yet: %s', album.name)
     album.save()
 
 def _set_genre(genre_name):
@@ -292,7 +297,9 @@ def _fix_mtime(config):
 def scan(config):
     _initialize(config)
     # import pdb; pdb.set_trace()
-    for bdb_album in bdb.albums():
+    from beets import dbcore
+    id_sort = dbcore.query.FixedFieldSort(u"id", True)
+    for bdb_album in bdb.albums(sort = id_sort):
         try:
             print("%s - %s" % (bdb_album.id, bdb_album.album.encode('utf-8')))
         except:
@@ -354,6 +361,7 @@ class Album(BaseModel):
     artist = ForeignKeyField(Artist, related_name='albums', db_column='artist_id', null=True)
     beets_id = IntegerField(null=True)
     catalognum = CharField(null=True)  # varchar
+    art_url = CharField(null=True)  # varchar
     comp = IntegerField(null=True)
     day = IntegerField(null=True)
     disctotal = IntegerField(null=True)

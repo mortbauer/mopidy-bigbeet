@@ -56,6 +56,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         query = self._sanitize_query(query)
         logger.debug(u'Search sanitized query: %s ' % query)
         albums = []
+        artists = []
         if not query:
             uri = 'bigbeet:search-all'
             tracks = schema.Track.select()
@@ -65,19 +66,27 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                              None,
                              'search',
                              query)
+            #import pdb; pdb.set_trace()
             schemas, bb_query = self._build_query_expressions(query, exact)
             joined_schema = self._build_joins(schemas, u'track')
             tracks = joined_schema.where(*bb_query)
             if 'track_name' not in query:
                 # when trackname queried dont search for albums
+                schemas, bb_query = self._build_query_expressions(query, exact,'album')
                 joined_schema = self._build_joins(schemas, u'album')
                 albums = joined_schema.where(*bb_query)
-        logger.debug(u"Query found %s tracks and %s albums"
-                     % (len(tracks), len(albums)))
+                if 'album' not in query:
+                    schemas, bb_query = self._build_query_expressions(query, exact,'artist')
+                    joined_schema = self._build_joins(schemas, u'artist')
+                    artists = joined_schema.where(*bb_query)
+
+        logger.debug(u"Query found %s tracks, %s albums and %s artists"
+                     % (len(tracks), len(albums), len(artists)))
         return SearchResult(
             uri=uri,
             tracks=[self._convert_track(track) for track in tracks],
-            albums=[self._convert_album(album) for album in albums]
+            albums=[self._convert_album(album) for album in albums],
+            artists = [self._convert_artist(artist) for artist in artists]
         )
 
     def _browse_root(self):
@@ -402,12 +411,19 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 return [track]
             except Exception as error:
                 logger.debug(u'Failed to lookup "%s": %s' % (uri, error))
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 return []
         elif item_type == 'album':
             try:
                 tracks = self._get_album(item_id)
                 return tracks
+            except Exception as error:
+                logger.debug(u'Failed to lookup "%s": %s' % (uri, error))
+                return []
+        elif item_type == 'artist':
+            try:
+                albums = self._get_artist(item_id)
+                return albums
             except Exception as error:
                 logger.debug(u'Failed to lookup "%s": %s' % (uri, error))
                 return []
@@ -423,6 +439,13 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
     def _get_album(self, item_id):
         album = schema.Album.get(schema.Album.id == item_id)
         return [self._convert_track(track) for track in album.track_set]
+
+    def _get_artist(self, item_id):
+        artist = schema.Artist.get(schema.Artist.id == item_id)
+        #import pdb; pdb.set_trace()
+        track_lists = [album.get().track_set for album in artist.albums]
+        tracks = [track for sublist in track_lists for track in sublist]
+        return [self._convert_track(track.get()) for track in tracks]
 
     def _get_groupings(self, query):
         groupings = []
@@ -497,7 +520,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             date = None
         return date
 
-    def _build_query_expressions(self, query, exact=True):
+    def _build_query_expressions(self, query, exact=True, req_obj='track'):
         """
         Transforms a mopidy query into a list of bigbeet
         query expressions
@@ -506,6 +529,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         # therefore we only take the first element
         bb_query = []
         schemas = []
+        # import pdb; pdb.set_trace()
         if u'album' in query:
             if exact:
                 bb_query.append(schema.Album.name == query['album'][0])
@@ -582,25 +606,42 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             bb_query.append(schema.Track.samplerate == query['samplerate'][0])
             schemas.append(u'track')
         if u'any' in query:
-            if exact:
-                bb_query.append((schema.Album.name == query['album'][0]) |
-                    (schema.Track.artist == query['performer'][0]) |
-                    (schema.Artist.name == query['artist'][0]) |
-                    (schema.Track.path == query['uri'][0]) |
-                    (schema.Track.year == int(query['year'][0])) |
-                    (schema.Track.name == query['track_name'][0]) |
-                    (schema.Track.composer == query['composer'][0]) |
-                    (schema.Genre.name == query['genre'][0]))
-            else:
-                bb_query.append((schema.Album.name.contains(query['album'][0])) |
-                    (schema.Track.artist.contains(query['performer'][0])) |
-                    (schema.Artist.name.contains(query['artist'][0])) |
-                    (schema.Track.path.contains(query['uri'][0])) |
-                    (schema.Track.year == int(query['year'][0])) |
-                    (schema.Track.name.contains(query['track_name'][0])) |
-                    (schema.Track.composer.contains(query['composer'][0])) |
-                    (schema.Genre.name.contains(query['genre'][0])))
-            [schemas.append(i) for i in ['track','album','artist','genre']]
+            if req_obj == 'track':
+                if exact:
+                    bb_query.append((schema.Album.name == query['any'][0]) |
+                        (schema.Track.artist == query['any'][0]) |
+                        (schema.Artist.name == query['any'][0]) |
+                        #(schema.Track.path == query['any'][0]) |
+                        #(schema.Track.year == int(query['year'][0])) |
+                        (schema.Track.name == query['any'][0]) |
+                        (schema.Track.composer == query['any'][0]) |
+                        (schema.Genre.name == query['any'][0]))
+                else:
+                    bb_query.append((schema.Album.name.contains(query['any'][0])) |
+                        (schema.Track.artist.contains(query['any'][0])) |
+                        (schema.Artist.name.contains(query['any'][0])) |
+                        # (schema.Track.path.contains(query['any'][0])) |
+                        # (schema.Track.year == int(query['year'][0])) |
+                        (schema.Track.name.contains(query['any'][0])) |
+                        (schema.Track.composer.contains(query['any'][0])) |
+                        (schema.Genre.name.contains(query['any'][0])))
+                [schemas.append(i) for i in ['track','album','artist','genre']]
+            if req_obj == 'album':
+                if exact:
+                    bb_query.append((schema.Album.name == query['any'][0]) |
+                       (schema.Artist.name == query['any'][0]) |
+                       (schema.Genre.name == query['any'][0]))
+                else:
+                    bb_query.append((schema.Album.name.contains(query['any'][0])) |
+                        (schema.Artist.name.contains(query['any'][0])) |
+                        (schema.Genre.name.contains(query['any'][0])))
+                [schemas.append(i) for i in ['album','artist','genre']]
+            if req_obj == 'artist':
+                if exact:
+                    bb_query.append(schema.Album.name == query['any'][0])
+                else:
+                    bb_query.append(schema.Artist.name.contains(query['any'][0]))
+                schemas.append('artist')
         return (set(schemas), bb_query)
 
     def _build_joins(self, schemas, query_type):
@@ -676,27 +717,19 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             artist_kwargs['name'] = item.artist
             track_kwargs['artists'] = [Artist(**artist_kwargs)]
         else:
-            album_kwargs['name'] = album.name
-            album_kwargs['musicbrainz_id'] = album.mb_albumid
-            album_kwargs['num_tracks'] = album.tracktotal
-            track_kwargs['album'] = Album(**album_kwargs)
+            track_kwargs['album'] = self._convert_album(album)
             artist = album.artist
             if artist:
-                album_kwargs['name'] = album.name
-                album_kwargs['musicbrainz_id'] = album.mb_albumid
-                artist_kwargs['name'] = artist.name
-                artist_kwargs['musicbrainz_id'] = artist.mb_albumartistid
-                track_kwargs['artists'] = [Artist(**artist_kwargs)]
+                track_kwargs['artists'] = [self._convert_artist(artist)]
         return Track(**track_kwargs)
 
     def _convert_album(self, album):
         """
-        Transforms a beets album into a mopidy Track
+        Transforms a beets album into a mopidy Album
         """
         if not album:
             return
         album_kwargs = {}
-        artist_kwargs = {}
 
         album_kwargs['name'] = album.name
         album_kwargs['num_discs'] = album.disctotal
@@ -716,15 +749,28 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         # if 'added' in item:
         #    album_kwargs['last_modified'] = album['added']
 
-        # if 'artpath' in album:
-        #    album_kwargs['images'] = [album['artpath']]
-        artist_kwargs['name'] = album.artist.name
-        artist_kwargs['musicbrainz_id'] = album.artist.mb_albumartistid
-        artist = Artist(**artist_kwargs)
+        if album.art_url:
+            album_kwargs['images'] = [album.art_url]
+        artist = self._convert_artist(album.artist)
         album_kwargs['artists'] = [artist]
         album_kwargs['uri'] = uricompose('bigbeet',
                                          None,
                                          ("album:%s:%s" % (album.id,album.mb_albumid)),
                                          None)
-        album = Album(**album_kwargs)
-        return album
+        return Album(**album_kwargs)
+
+    def _convert_artist(self, artist):
+        """
+        Transforms a beets artist into a mopidy Artist
+        """
+        if not artist:
+            return
+        artist_kwargs = {}
+        artist_kwargs['name'] = artist.name
+        artist_kwargs['sortname'] = artist.albumartist_sort
+        artist_kwargs['musicbrainz_id'] = artist.mb_albumartistid
+        artist_kwargs['uri'] = uricompose('bigbeet',
+                                          None,
+                                          ("artist:%s:%s" % (artist.id,artist.mb_albumartistid)),
+                                          None)
+        return Artist(**artist_kwargs)

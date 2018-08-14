@@ -26,7 +26,7 @@ class Extension(ext.Extension):
     def get_config_schema(self):
         schema = super(Extension, self).get_config_schema()
         schema['beetslibrary'] = config.String()
-        schema['bb_library'] = config.String()
+        schema['bb_data_dir'] = config.String()
         return schema
 
     def get_command(self):
