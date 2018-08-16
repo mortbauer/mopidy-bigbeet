@@ -1,0 +1,77 @@
+directory: /data/music/music_data/beets
+library: /data/music/music_var/beetslibrary.blb
+ignore: .AppleDouble ._* *~ .DS_Store
+art_filename: cover
+threaded: yes
+ui:
+  color: yes
+import:
+    move: yes
+clutter: [ "Thumbs.DB", ".DS_Store", "cover.jpg", "cover.png" ]
+format_item: '$genre :$grouping  $artist - $album - $title $path'
+format_album: '$genre :$albumtype  $albumartist - $album $path'
+pluginpath:
+   - /mopidy-bigbeet/beetsplug
+   - /usr/local/lib/python2.7/dist-packages/beetsplug
+plugins:
+    web
+    lyrics
+    duplicates
+    copyartifacts
+    rewrite
+    bigbeet
+    lastgenre
+    missing
+    fuzzy
+    info
+
+chroma:
+    auto: yes
+
+lastgenre:
+   source: artist 
+   count: 1
+   canonical: /data/music/music_var/beet-config/genres-tree.yaml 
+   whitelist: /data/music/music_var/beet-config/genres.txt
+
+per_disc_numbering: yes
+asciify_paths: yes
+replace:
+    '[\\/ ,]': _
+    '^\.': _
+    '[\x00-\x1f]': ''
+    '[<>:"\?\*\|]': ''
+    '\.$': _
+    '&': _and_
+    '\s+$': ''
+    '"': ''
+    "'": ''
+    "[!:;]": ''
+    '\(.*?\)': ''
+    '\[.*?\]': ''
+    '__': _
+    '\.\.': ''
+match:
+    max_rec:
+        missing_tracks: low
+paths:
+    default: %asciify{%upper{%left{%if{$albumartist,$albumartist,$artist},1}}}/%asciify{$albumartist}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{$album}/%if{$disc,$disc-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    singleton: 00_Singletons/%if{$artist,%asciify{%upper{%left{$artist,1}}},unknown}/%asciify{${artist}_-_$title}
+    genre:"Radio Play": 00_HOERSPIELE/%if{${grouping},${grouping},no_group}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{%if{${artist},${artist}_-_}%if{${album},${album}_-_}$title}%if{$track,-Teil_$track}
+    album:Fabric: 00_COMPILATIONS/Fabric/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    grouping:Total: 00_COMPILATIONS/Total/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    album:"Festive Fifty": 00_COMPILATIONS/John_Peel/Festive_Fifties/%if{$year,${year},%asciify{$album}}/%if{$track,${track}_-_}%asciify{${artist}_-_$title}
+    album:"Festive Fifty All": 00_COMPILATIONS/John_Peel/Festive_Fifties/%if{$year,${year}-All_Time,%asciify{$album}}/%if{$track,${track}_-_}%asciify{${artist}_-_$title}
+    album:"Punk Sessions": 00_COMPILATIONS/John_Peel/Punk_Sessions/%asciify{$artist}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    comp: 00_COMPILATIONS/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_$title}
+    albumtype:soundtrack: 00_Soundtracks/%if{$original_year,${original_year}_}%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{%if{$artist,${artist}_-_}}%asciify{$title}
+    albumtype:spokenword: 00_Spokenword/%if{$albumartist,$albumartist,$artist}/%if{$original_year,${original_year}_}%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{$title}
+
+rewrite:
+    artist The Jimi Hendrix Experience: Jimi Hendrix
+    artist Anna Yuryevna Netrebko: Anna Netrebko
+    artist Anna Iurevna Netrebko: Anna Netrebko
+    artist Marc Bolan and T. Rex: T. Rex
+    artist Belle and Sebastian feat. The Maisonettes: Belle and Sebastian
+    artist “Brother” Jack McDuff: Jack McDuff
+    albumartist Aphex Twin (aka Universal Indicator): Aphex Twin
