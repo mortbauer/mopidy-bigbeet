@@ -398,6 +398,11 @@ class SchemaMigration(BaseModel):
     class Meta:
         db_table = 'schema_migrations'
 
+class UserTag(BaseModel):
+    name = CharField(null=True)  # varchar
+    class Meta:
+        db_table = 'user_tags'
+
 
 class Track(BaseModel):
     acoustid_fingerprint = CharField(null=True)  # varchar
@@ -441,3 +446,9 @@ class Track(BaseModel):
     created_at = DateTimeField(null=True)
     class Meta:
         db_table = 'tracks'
+
+class TrackTag(BaseModel):
+    track = ForeignKeyField(Track, db_column='track_id', null=True)
+    tag = ForeignKeyField(UserTag, db_column='user_tag_id', null=True)
+    class Meta:
+        db_table = 'track_tags'

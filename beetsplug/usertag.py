@@ -27,24 +27,31 @@ from __future__ import (division, absolute_import, print_function,
                         unicode_literals)
 
 # TODO: tests
-
+import mysql.connector
 from beets.plugins import BeetsPlugin
 from beets.ui import Subcommand
 from beets.dbcore import types
-import mysql.connector
+from uritools import uricompose, uriencode, urisplit
+from mopidy_bigbeet.schema import schema
+
+
 
 def scan_rompr_tags(lib, opts, args):
-    print('YO!!')
     rompr_cnx = mysql.connector.connect(user='admin', password='R9nM773tYJtcLv',
                               host='rompr',
                               database='romprdb')
     cursor = rompr_cnx.cursor()
-    query = ("select Tagtable.Name as Tag, Tracktable.Uri as Path  from Tracktable , TagListtable, Tagtable where Tracktable.TTindex = TagListtable.TTindex and Tagtable.Tagindex = TagListtable.Tagindex;")
+    query = ("select Tagtable.Name as Tag, Tracktable.Uri as uri  from Tracktable , TagListtable, Tagtable where Tracktable.TTindex = TagListtable.TTindex and Tagtable.Tagindex = TagListtable.Tagindex;")
     cursor.execute(query)
-    for (Tag, Path) in cursor:
+    for (Tag, uri) in cursor:
+        if not uri.startswith('bigbeet:'):
+            continue
         print("{}, {} ".format(
-              Tag, Path))
-
+              Tag, uri))
+        item_type, item_id, item_path = uri.split(b':', 3)[1:4]
+        print(item_path)
+        opts.tags = [Tag]
+        add_usertag(lib,opts,"path:{}".format(item_path))
     cursor.close()
     rompr_cnx.close()
 scan_tags_command = Subcommand('scantags',
@@ -69,6 +76,7 @@ def add_usertag(lib, opts, args):
         item.update({'usertags': '|'.join(usertags)})
         item.store()
         print('Added tags\n   {}'.format(item))
+        call(['mopidy', 'bigbeet', 'beet_update', '-i', str(item.id)])
 add_tag_command = Subcommand(
     'addtag',
     help='Add user defined tags.',
