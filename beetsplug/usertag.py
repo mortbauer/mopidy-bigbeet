@@ -31,8 +31,7 @@ import mysql.connector
 from beets.plugins import BeetsPlugin
 from beets.ui import Subcommand
 from beets.dbcore import types
-from uritools import uricompose, uriencode, urisplit
-from mopidy_bigbeet.schema import schema
+from subprocess import call
 
 
 
@@ -75,7 +74,7 @@ def add_usertag(lib, opts, args):
             usertags.pop(usertags.index(''))
         item.update({'usertags': '|'.join(usertags)})
         item.store()
-        print('Added tags\n   {}'.format(item))
+        print('Added tags\n   {}'.format(item.path))
         call(['mopidy', 'bigbeet', 'beet_update', '-i', str(item.id)])
 add_tag_command = Subcommand(
     'addtag',

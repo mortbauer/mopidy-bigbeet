@@ -4,39 +4,49 @@ ignore: .AppleDouble ._* *~ .DS_Store
 art_filename: cover
 threaded: yes
 ui:
-  color: yes
+    color: yes
 import:
     move: yes
+    write: yes
 clutter: [ "Thumbs.DB", ".DS_Store", "cover.jpg", "cover.png" ]
-format_item: '$genre :$grouping  $artist - $album - $title $path'
+format_item: '$id $genre :$grouping  |$usertags $artist - $album - $title $path'
 format_album: '$genre :$albumtype  $albumartist - $album $path'
 pluginpath:
-   - /mopidy-bigbeet/beetsplug
-   - /usr/local/lib/python2.7/dist-packages/beetsplug
+    - /root/src/mopidy-bigbeet/beetsplug
+    - /usr/local/lib/python2.7/dist-packages/beetsplug
+
 plugins:
     web
-    lyrics
     duplicates
     copyartifacts
     rewrite
     bigbeet
+    usertag
     lastgenre
     missing
     fuzzy
     info
+    edit
+    the
 
 chroma:
     auto: yes
 
 lastgenre:
+   prefer_specific: yes
+   auto: no
    source: artist 
    count: 1
-   canonical: /data/music/music_var/beet-config/genres-tree.yaml 
-   whitelist: /data/music/music_var/beet-config/genres.txt
+   canonical: /root/src/mopidy-bigbeet/mopidy_bigbeet/schema/genres-tree.yaml 
+   whitelist: /root/src/mopidy-bigbeet/mopidy_bigbeet/schema/genres.txt
+
+the:
+    strip: yes
 
 per_disc_numbering: yes
 asciify_paths: yes
 replace:
+    ', ': '-'
     '[\\/ ,]': _
     '^\.': _
     '[\x00-\x1f]': ''
@@ -55,8 +65,11 @@ match:
     max_rec:
         missing_tracks: low
 paths:
-    default: %asciify{%upper{%left{%if{$albumartist,$albumartist,$artist},1}}}/%asciify{$albumartist}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{$album}/%if{$disc,$disc-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
-    singleton: 00_Singletons/%if{$artist,%asciify{%upper{%left{$artist,1}}},unknown}/%asciify{${artist}_-_$title}
+    default: %asciify{%upper{%the{%left{%if{$albumartist,$albumartist,$artist},1}}}}/%asciify{%the{$albumartist}}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{$album}/%if{$disc,$disc-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    singleton: 00_Singletons/%if{$artist,%asciify{%upper{%the{%left{$artist,1}}}},unknown}/%asciify{${artist}_-_$title}
+    albumtype:compilation: 00_COMPILATIONS/${grouping}/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
+    genre:"Radio Play": 00_HOERSPIELE/%if{${grouping},${grouping},no_group}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{%if{${artist},${artist}_-_}%if{${album},${album}_-_}$title}%if{$track,-Teil_$track}
+    album:Fabric: 00_COMPILATIONS/Fabric/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
     genre:"Radio Play": 00_HOERSPIELE/%if{${grouping},${grouping},no_group}/%if{$original_year,${original_year}_,%if{$year,${year}-}}%asciify{%if{${artist},${artist}_-_}%if{${album},${album}_-_}$title}%if{$track,-Teil_$track}
     album:Fabric: 00_COMPILATIONS/Fabric/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
     grouping:Total: 00_COMPILATIONS/Total/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
@@ -64,6 +77,7 @@ paths:
     album:"Festive Fifty All": 00_COMPILATIONS/John_Peel/Festive_Fifties/%if{$year,${year}-All_Time,%asciify{$album}}/%if{$track,${track}_-_}%asciify{${artist}_-_$title}
     album:"Punk Sessions": 00_COMPILATIONS/John_Peel/Punk_Sessions/%asciify{$artist}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
     comp: 00_COMPILATIONS/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_$title}
+    albumtype:compilation: 00_COMPILATIONS/${grouping}/%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{${artist}_-_${album}_-_$title}
     albumtype:soundtrack: 00_Soundtracks/%if{$original_year,${original_year}_}%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{%if{$artist,${artist}_-_}}%asciify{$title}
     albumtype:spokenword: 00_Spokenword/%if{$albumartist,$albumartist,$artist}/%if{$original_year,${original_year}_}%asciify{$album}/%if{$disc,${disc}-}%if{$track,${track}_-_}%asciify{$title}
 
@@ -74,4 +88,13 @@ rewrite:
     artist Marc Bolan and T. Rex: T. Rex
     artist Belle and Sebastian feat. The Maisonettes: Belle and Sebastian
     artist “Brother” Jack McDuff: Jack McDuff
+    artist Universal Indicator: Aphex Twin (aka Universal Indicator)
+    albumartist Universal Indicator: Aphex Twin
     albumartist Aphex Twin (aka Universal Indicator): Aphex Twin
+    albumartist Aphex Twin (aka Polygon Window): Aphex Twin
+    albumartist Aphex Twin (aka Bradley Strider): Aphex Twin
+    albumartist Aphex Twin (aka AFX): Aphex Twin
+    albumartist 'Lou Reed & Nico': Lou Reed
+    albumartist "Lou Reed, John Cale & Nico": Lou Reed
+    albumartist The Residents & Renaldo & The Loaf: The Residents
+ 

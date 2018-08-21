@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 import os.path
+import sys
 from os import listdir
 from mopidy_bigbeet import Extension
 from mopidy_bigbeet.schema import beet_schema, genre_schema
@@ -23,10 +24,12 @@ gdb = None
 data_dir = None
 database = APSWDatabase(None,
                         pragmas=(
+                                ('foreign_keys', 'ON'),
                                 ('temp_store', 2),
                                 ('journal_mode', 'WAL'),
                                 ('user_version', user_version)
-                                    ))
+                                ))
+unwanted = [u'_',u'1',u'2',u'3',u'4',u'5',u'6',u'7',u'8',u'9',u'0',u' ',u'!',u'"',u'.',u'<']
 
 
 def _initialize(config):
@@ -43,15 +46,15 @@ def _initialize(config):
 
 
 def setup_db():
-	# import pdb; pdb.set_trace()
+	#import pdb; pdb.set_trace()
     try:
         database.drop_tables(
-            [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
+            [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track,  UserTag, TrackTag])
     except:
         pass
-    database.create_tables(
-        [Genre, AlbumGroup, Album, ArtistSecondaryGenre, Artist, Label, SecondaryGenre, SchemaMigration, Track])
-    SchemaMigration.create(version = '20171229' )
+    for modell in [Genre, AlbumGroup, Album, Artist, Label, SchemaMigration, Track, UserTag, TrackTag]:
+        modell.create_table()
+    SchemaMigration.create(version = '20180818' )
 
 
 def _connect_db(db_path):
@@ -141,18 +144,48 @@ def _sync_beets_item(track, item):
     track.samplerate = item.samplerate
     track.track = item.track
     track.year = item.year
+    _sync_usertags(item, track)
     track.save()
+
+def _sync_usertags(item, track):
+    bb_usertags = [i.tag.name for i in track.tracktag_set]
+    if hasattr(item, 'usertags'):
+        usertags = item.usertags.split('|')
+    else:
+        usertags = []
+    missing_usertags = [i for i in usertags if i not in bb_usertags]
+    delete_usertags = [i for i in bb_usertags if i not in usertags]
+    # import pdb; pdb.set_trace()
+    if set(bb_usertags) == set(usertags):
+        # Nothing to sync
+        return
+    elif missing_usertags:
+        for tag_str in missing_usertags:
+            tag, created = UserTag.get_or_create(name=tag_str)
+            TrackTag.get_or_create(track=track, tag=tag)
+    elif delete_usertags:
+        for tag_str in delete_usertags:
+            usertag = UserTag.select().where(UserTag.name == tag_str)[0]
+            usertag.delete_instance(recursive=True)
 
 
 def _sync_beets_album(album, bdb_album):
     genre_name = bdb_album.genre or '_Unknown'
     genre = _set_genre(genre_name)
-    artist, created = Artist.get_or_create(
-        name=(bdb_album.albumartist or '_Unknown'),
-        mb_albumartistid=bdb_album.mb_albumartistid)
+    try:
+        artist, created = Artist.get_or_create(
+            name=(bdb_album.albumartist or '_Unknown'),
+            mb_albumartistid=bdb_album.mb_albumartistid)
+    except:
+        # import pdb; pdb.set_trace()
+        if bdb_album.mb_albumartistid:
+            artist, created = Artist.get_or_create(mb_albumartistid=bdb_album.mb_albumartistid)
+        else:
+            artist, created = Artist.get_or_create(name=(bdb_album.albumartist or '_Unknown'))
     artist.country = bdb_album.country
     artist.albumartist_sort = bdb_album.albumartist_sort
     artist.albumartist_credit = bdb_album.albumartist_credit
+    artist.albumartist_initial = _get_artist_initial(artist)
     artist.genre = genre
     artist.save()
     label, created = Label.get_or_create(name = (bdb_album.label or '_Unknown'))
@@ -184,6 +217,14 @@ def _sync_beets_album(album, bdb_album):
     except:
         logger.debug(u'Album has no art_url field yet: %s', album.name)
     album.save()
+
+def _get_artist_initial(artist):
+    if artist.albumartist_sort:
+        return [i for i in artist.albumartist_sort if i not in unwanted][0].upper()
+    elif artist.name:
+        return [i for i in artist.name if i not in unwanted][0].upper()
+    else:
+        return u'-'
 
 def _set_genre(genre_name):
     genres = gdb.find_parents(genre_name)
@@ -248,7 +289,7 @@ def _delete_orphans():
     genres = Genre.select()
     for genre in genres:
         if not genre.artists:
-            genre.delete_instance()
+            genre.delete()
     labels = Label.select()
     for label in labels:
         if not label.albums:
@@ -313,6 +354,7 @@ def scan(config):
     for item in bdb.items(u'singleton:true'):
         track, created = Track.get_or_create(beets_id=item.id)
         _sync_beets_item(track, item)
+    _delete_orphans()
 
 def _find_children(genre, children):
     logger.info("called with {0}".format(genre.name))
@@ -334,7 +376,7 @@ class AlbumGroup(BaseModel):
         db_table = 'album_groups'
 
 class Genre(BaseModel):
-    name = CharField(null=True)  # varchar
+    name = CharField(null=True, unique=True)  # varchar
     parent = IntegerField(null=True)
     class Meta:
         db_table = 'genres'
@@ -349,8 +391,9 @@ class Artist(BaseModel):
     albumartist_sort = CharField(null=True)  # varchar
     country = CharField(null=True)  # varchar
     genre = ForeignKeyField(Genre, related_name='artists', db_column='genre_id', null=True)
-    mb_albumartistid = CharField(null=True)  # varchar
-    name = CharField(null=True)  # varchar
+    mb_albumartistid = CharField(null=True, unique=True)  # varchar
+    name = CharField(null=True, unique=True)  # varchar
+    albumartist_initial = CharField(null=True)  # varchar
     class Meta:
         db_table = 'artists'
 
@@ -368,7 +411,7 @@ class Album(BaseModel):
     genre = ForeignKeyField(Genre, related_name='albums', db_column='genre_id', null=True)
     label = ForeignKeyField(Label, related_name='albums', db_column='label_id', null=True)
     language = CharField(null=True)  # varchar
-    mb_albumid = CharField(null=True)  # varchar
+    mb_albumid = CharField(null=True, unique=True)  # varchar
     # mb_albumartistid
     mb_releasegroupid = CharField(null=True)  # varchar
     month = IntegerField(null=True)
@@ -381,17 +424,17 @@ class Album(BaseModel):
     class Meta:
         db_table = 'albums'
 
-class SecondaryGenre(BaseModel):
-    name = CharField(null=True)  # varchar
-    class Meta:
-        db_table = 'secondary_genres'
+# class SecondaryGenre(BaseModel):
+#     name = CharField(null=True)  # varchar
+#     class Meta:
+#         db_table = 'secondary_genres'
 
-class ArtistSecondaryGenre(BaseModel):
-    artist = ForeignKeyField(Artist, db_column='artist_id', null=True)
-    position = IntegerField(null=True)
-    secondary_genre = ForeignKeyField(SecondaryGenre, db_column='secondary_genre_id', null=True)
-    class Meta:
-        db_table = 'artist_secondary_genres'
+# class ArtistSecondaryGenre(BaseModel):
+#     artist = ForeignKeyField(Artist, db_column='artist_id', null=True)
+#     position = IntegerField(null=True)
+#     secondary_genre = ForeignKeyField(SecondaryGenre, db_column='secondary_genre_id', null=True)
+#     class Meta:
+#         db_table = 'artist_secondary_genres'
 
 class SchemaMigration(BaseModel):
     version = CharField(primary_key=True)  # varchar
@@ -399,7 +442,7 @@ class SchemaMigration(BaseModel):
         db_table = 'schema_migrations'
 
 class UserTag(BaseModel):
-    name = CharField(null=True)  # varchar
+    name = CharField(unique=True)  # varchar
     class Meta:
         db_table = 'user_tags'
 
@@ -442,13 +485,14 @@ class Track(BaseModel):
     samplerate = IntegerField(null=True)
     track = IntegerField(null=True)
     year = IntegerField(null=True)
-    updated_at = DateTimeField(null=True)
-    created_at = DateTimeField(null=True)
     class Meta:
         db_table = 'tracks'
 
 class TrackTag(BaseModel):
-    track = ForeignKeyField(Track, db_column='track_id', null=True)
-    tag = ForeignKeyField(UserTag, db_column='user_tag_id', null=True)
+    track = ForeignKeyField(Track, db_column='track_id', null=False)
+    tag = ForeignKeyField(UserTag, db_column='user_tag_id', null=False)
     class Meta:
+        indexes = (
+            (('tag', 'track'), True),
+        )
         db_table = 'track_tags'

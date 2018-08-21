@@ -73,9 +73,17 @@ class DebugCommand(commands.Command):
     def run(self, args, config):
         from mopidy import backend
         import pykka
+        #import os.path
+        #from playhouse.apsw_ext import APSWDatabase, DateTimeField
+        #data_dir = config['bigbeet']['bb_data_dir']
+        #db_path = os.path.join(data_dir, b'bb_library.db')
+        #database = APSWDatabase(None,pragmas=(('foreign_keys', 'ON'),('temp_store', 2),('journal_mode', 'WAL')))
+        # database.init(db_path)
+        # database.connect()
         from .backend import BigbeetBackend
         from uritools import uricompose, uriencode, urisplit
         library = BigbeetBackend(config,None).library
+        bdb = schema.beet_schema.BeetsLibrary(config['bigbeet']['beetslibrary']).lib
         schema._initialize(config)
 
         import pdb; pdb.set_trace()

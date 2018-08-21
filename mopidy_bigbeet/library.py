@@ -26,7 +26,9 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
     ROOT_URI = 'bigbeet:root'
     root_directory = Ref.directory(uri=ROOT_URI, name='Local (bigbeet)')
     FIRST_LEVEL = [
+        'Artist',
         'Genre',
+        'Usertags',
         'Grouping',
         'Radio Plays',
         'Singletons',
@@ -37,7 +39,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
         'Year',
         # 'Added At',
     ]
-    auto_grouping = 0
+    auto_grouping = 5
 
 
     def __init__(self, *args, **kwargs):
@@ -159,6 +161,37 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
             )
         return refs
 
+    def _browse_usertags(self, query):
+        if query and 'usertag' in query:
+            tag = schema.UserTag.get_by_id(query['usertag'][0])
+            tracks = [i.track for i in tag.tracktag_set]
+            albums = [i.album for i in  tracks]
+            for track in sorted(tracks, key=lambda x: x.track):
+                yield Ref.track(
+                    uri="bigbeet:track:%s:%s" % (
+                        track.id,
+                        uriencode(str(track.path), '/')),
+                    name=track.name)
+            for album in set(albums):
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'tracks',
+                                   dict(album_id=album.id)),
+                    name="{0} - {1} ({2})".format(
+                        album.artist.name,
+                        album.name,
+                        album.tracktotal)
+                )
+        else:
+            for tag in sorted(schema.UserTag.select()):
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'usertags',
+                                   dict(usertag=tag.id)),
+                    name=tag.name)
+
 
     def _browse_groupings(self, query):
         groupings = self._show_groupings(query, 'artists')
@@ -176,11 +209,29 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                                      track_genre='Radio Play')),
                     name=grouping)
 
+    def _browse_artist_initials(self, query):
+        if query and 'artist_initial' in query:
+            artists = schema.Artist.select().where(schema.Artist.albumartist_initial == query['artist_initial'][0])
+            for artist in sorted(artists, key=lambda x: x.name):
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'albums',
+                                   dict(artist_id=artist.id)),
+                    name=artist.name
+                )
+        else:
+            for artist_initial in sorted(set([i.albumartist_initial for i in schema.Artist.select()])):
+                yield Ref.directory(
+                    uri=uricompose('bigbeet',
+                                   None,
+                                   'artist',
+                                   dict(artist_initial=artist_initial)),
+                    name=artist_initial if bool(artist_initial) else u'None')
 
     def _browse_artists(self, query):
         if u'all_artists' in query:
             genre = schema.Genre.get(id=query['genre_id'][0])
-            # import pdb; pdb.set_trace()
             genres = schema._find_children(genre,[genre])
             logger.info([g.name for g in genres])
             artists = []
@@ -348,8 +399,12 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                 # import pdb; pdb.set_trace()
         if level == 'root':
            return list(self._browse_root())
+        elif level == "artist":
+            return list(self._browse_artist_initials(query))
         elif level == "genre":
             return list(self._browse_genre(query))
+        elif level == "usertags":
+            return list(self._browse_usertags(query))
         elif level == "grouping":
             return list(self._browse_groupings(query))
         elif level == "radio%20plays":

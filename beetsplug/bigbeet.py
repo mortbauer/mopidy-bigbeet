@@ -14,14 +14,14 @@ class BigbeetPlugin(BeetsPlugin):
         elif model.__class__.__name__ == 'Album':
             self.changed_albums[model.id] = model
         else:
-            print "Unknown Model {}".format(model.__class__.__name__)
+            print('Unknown Model {1}'.format(model.__class__.__name__))
             import pdb; pdb.set_trace()
         self.register_listener('cli_exit', self.update)
 
     def update(self, lib):
         for album_id, album in self.changed_albums.iteritems():
-            print "Album changed with id: {0} with {1}".format(album_id, album.genre)
+            print("Album changed with id: {0} with {1}".format(album_id, album.genre))
             call(['mopidy', 'bigbeet', 'beet_update', '-a', str(album_id)])
         for item_id, item in self.changed_items.iteritems():
-            print "Item changed with id: {0} at {1}".format(item_id,item.path)
+            print("Item changed with id: {0} at {1}".format(item_id,item.path))
             call(['mopidy', 'bigbeet', 'beet_update', '-i', str(item_id)])
