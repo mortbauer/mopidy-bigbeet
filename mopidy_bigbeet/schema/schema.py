@@ -192,7 +192,7 @@ def _sync_beets_album(album, bdb_album):
     album_group, created = AlbumGroup.get_or_create(
         name = (bdb_album.albumtype or '_Unknown'))
     album.name = bdb_album.album
-    album.mb_albumid = bdb_album.mb_albumid
+    album.mb_albumid = bdb_album.mb_albumid or None
     album.label = label
     album.artist = artist
     album.album_group = album_group
@@ -204,7 +204,6 @@ def _sync_beets_album(album, bdb_album):
     album.disctotal = bdb_album.disctotal
     album.genre = genre
     album.language = bdb_album.language
-    album.mb_albumid = bdb_album.mb_albumid
     album.mb_releasegroupid = bdb_album.mb_releasegroupid
     album.month = bdb_album.month
     album.original_day = bdb_album.original_day
@@ -216,7 +215,11 @@ def _sync_beets_album(album, bdb_album):
         album.art_url = bdb_album.art_url
     except:
         logger.debug(u'Album has no art_url field yet: %s', album.name)
-    album.save()
+    try:
+        album.save()
+    except:
+        import pdb;
+        pdb.set_trace()
 
 def _get_artist_initial(artist):
     if artist.albumartist_sort:
@@ -262,16 +265,17 @@ def album_update(config,album_id):
         albums = Album.select().where(Album.beets_id == album_id)
         for album in albums:
             artist = album.artist
-            genre = artist.genre
+            if artist:
+                genre = artist.genre
             label = album.label
             album_group = album.album_group
             logger.info(u'Album deleted: %s', album.name)
             album.delete_instance()
-            if not artist.albums:
+            if artist and not artist.albums:
                 artist.delete_instance()
-            if not label.albums:
+            if label and not label.albums:
                 label.delete_instance()
-            if not album_group.albums:
+            if album_group and not album_group.albums:
                 album_group.delete_instance()
             if not genre.artists and not Genre.select().where(Genre.parent == genre.id):
                 genre.delete_instance()
@@ -402,7 +406,7 @@ class Album(BaseModel):
     album_group = ForeignKeyField(AlbumGroup, related_name='albums', db_column='album_group_id', null=True)
     albumstatus = CharField(null=True)  # varchar
     artist = ForeignKeyField(Artist, related_name='albums', db_column='artist_id', null=True)
-    beets_id = IntegerField(null=True)
+    beets_id = IntegerField(null=True, unique=True)
     catalognum = CharField(null=True)  # varchar
     art_url = CharField(null=True)  # varchar
     comp = IntegerField(null=True)
