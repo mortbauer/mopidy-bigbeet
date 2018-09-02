@@ -265,12 +265,14 @@ def album_update(config,album_id):
         albums = Album.select().where(Album.beets_id == album_id)
         for album in albums:
             artist = album.artist
-            if artist:
-                genre = artist.genre
             label = album.label
             album_group = album.album_group
-            logger.info(u'Album deleted: %s', album.name)
+            for track in album.track_set:
+                track.delete_instance()
             album.delete_instance()
+            logger.info(u'Album deleted: %s', album.name)
+            if artist:
+                genre = artist.genre
             if artist and not artist.albums:
                 artist.delete_instance()
             if label and not label.albums:

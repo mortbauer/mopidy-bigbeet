@@ -218,7 +218,7 @@ class BigbeetLibraryProvider(backend.LibraryProvider):
                                    None,
                                    'albums',
                                    dict(artist_id=artist.id)),
-                    name=artist.name
+                    name=artist.name if bool(artist.name) else u'None'
                 )
         else:
             for artist_initial in sorted(set([i.albumartist_initial for i in schema.Artist.select()])):

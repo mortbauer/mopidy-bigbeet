@@ -20,7 +20,11 @@ class BigbeetPlugin(BeetsPlugin):
 
     def update(self, lib):
         for album_id, album in self.changed_albums.iteritems():
-            print("Album changed with id: {0} with {1}".format(album_id, album.genre))
+            try:
+                print("Album changed with id: {0} with {1}".format(album_id, album.genre))
+            except:
+                import pdb;
+                pdb.set_trace()
             call(['mopidy', 'bigbeet', 'beet_update', '-a', str(album_id)])
         for item_id, item in self.changed_items.iteritems():
             print("Item changed with id: {0} at {1}".format(item_id,item.path))
