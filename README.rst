@@ -68,8 +68,8 @@ Project resources
 Credits
 =======
 
-- Original author: `tom roth <https://github.com/rawdlite`__
-- Current maintainer: `tom roth <https://github.com/rawdlite`__
+- Original author: `tom roth <https://github.com/rawdlite>`_
+- Current maintainer: `tom roth <https://github.com/rawdlite>`_
 - `Contributors <https://github.com/rawdlite/mopidy-bigbeet/graphs/contributors>`_
 
 
